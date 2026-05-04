@@ -34,18 +34,6 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Thiết lập môi trường development và cấu trúc project
 
 **Tasks:**
-<<<<<<< HEAD
-- [ ] Tạo thư mục `contracts/` theo cấu trúc module
-- [ ] Tạo thư mục `test/` cho test cases
-- [ ] Tạo thư mục `scripts/` cho deployment
-- [ ] Cấu hình Hardhat network (localhost, sepolia)
-- [ ] Cài đặt thêm dependencies cần thiết (nếu có)
-- [ ] Kiểm tra `hardhat compile` chạy thành công
-
-**Definition of Done:**
-- [ ] `npx hardhat compile` không có lỗi
-- [ ] Cấu trúc thư mục rõ ràng, có thể import contracts được
-=======
 - [x] Tạo thư mục `contracts/` theo cấu trúc module
 - [x] Tạo thư mục `test/` cho test cases
 - [x] Tạo thư mục `scripts/` cho deployment
@@ -56,7 +44,6 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Definition of Done:**
 - [x] `npx hardhat compile` không có lỗi
 - [x] Cấu trúc thư mục rõ ràng, có thể import contracts được
->>>>>>> c2ad778 (Phase 1: add nft-term-deposit and project structure)
 
 ---
 
@@ -65,15 +52,15 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Thiết kế kiến trúc contracts và interface
 
 **Tasks:**
-- [ ] Thiết kế contract inheritance hierarchy
-- [ ] Define interfaces (IERC20, IERC721)
-- [ ] Lập danh sách events cần emit
-- [ ] Xác định access control (Ownable, Roles)
-- [ ] Sketch data structures (Structs)
+- [x] Thiết kế contract inheritance hierarchy
+- [x] Define interfaces (IERC20, IERC721)
+- [x] Lập danh sách events cần emit
+- [x] Xác định access control (Ownable, Roles)
+- [x] Sketch data structures (Structs)
 
 **Definition of Done:**
-- [ ] Architecture diagram (text-based) hoàn thành
-- [ ] Danh sách events & errors được document
+- [x] Architecture diagram (text-based) hoàn thành
+- [x] Danh sách events & errors được document
 
 ---
 

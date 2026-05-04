@@ -1,0 +1,662 @@
+[
+    {
+        "inputs": [],
+        "name": "CoreIsPaused",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DepositAboveMaximum",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DepositAlreadyRenewed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DepositAlreadyWithdrawn",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DepositBelowMinimum",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DepositNotMatured",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "GracePeriodNotOver",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InsufficientVaultBalance",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidApr",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidPlanId",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidTenor",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotDepositOwner",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "PlanDoesNotExist",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "PlanNotEnabled",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "ZeroAddress",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "principal",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "maturityAt",
+                "type": "uint256"
+            }
+        ],
+        "name": "DepositOpened",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "principal",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "penalty",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "received",
+                "type": "uint256"
+            }
+        ],
+        "name": "EarlyWithdrawn",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "tenorDays",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "aprBps",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "minDeposit",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "maxDeposit",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "penaltyBps",
+                "type": "uint256"
+            }
+        ],
+        "name": "PlanCreated",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            }
+        ],
+        "name": "PlanDisabled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            }
+        ],
+        "name": "PlanEnabled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newAprBps",
+                "type": "uint256"
+            }
+        ],
+        "name": "PlanUpdated",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "oldDepositId",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "newDepositId",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newPrincipal",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newPlanId",
+                "type": "uint256"
+            }
+        ],
+        "name": "Renewed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "SavingCorePaused",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "SavingCoreUnpaused",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "principal",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "interest",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "total",
+                "type": "uint256"
+            }
+        ],
+        "name": "Withdrawn",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            }
+        ],
+        "name": "autoRenewDeposit",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "newDepositId",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "tenorDays",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aprBps",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "minDeposit",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "maxDeposit",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "penaltyBps",
+                "type": "uint256"
+            }
+        ],
+        "name": "createPlan",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            }
+        ],
+        "name": "disablePlan",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            }
+        ],
+        "name": "earlyWithdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            }
+        ],
+        "name": "enablePlan",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDeposit",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "planId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "principal",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "maturityAt",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "aprBpsAtOpen",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "penaltyBpsAtOpen",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "enum ISavingCore.DepositStatus",
+                        "name": "status",
+                        "type": "uint8"
+                    }
+                ],
+                "internalType": "struct ISavingCore.DepositInfo",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getDepositCount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getPlan",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tenorDays",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "aprBps",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "minDeposit",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "maxDeposit",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "penaltyBps",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "enabled",
+                        "type": "bool"
+                    }
+                ],
+                "internalType": "struct ISavingCore.SavingPlan",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getPlanCount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "openDeposit",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "pause",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "newPlanId",
+                "type": "uint256"
+            }
+        ],
+        "name": "renewDeposit",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "newDepositId",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "unpause",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "planId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "newAprBps",
+                "type": "uint256"
+            }
+        ],
+        "name": "updatePlan",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "depositId",
+                "type": "uint256"
+            }
+        ],
+        "name": "withdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

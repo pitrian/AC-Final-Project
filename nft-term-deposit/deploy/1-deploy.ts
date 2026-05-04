@@ -10,18 +10,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(hre.network.name);
   console.log("====================");
 
-  console.log("====================");
-  console.log("Deploying Placeholder Contract");
-  console.log("====================");
+  // Deployments will be added as contracts are implemented
+  // Phase 2: MockUSDC
+  // Phase 3: VaultManager
+  // Phase 4: SavingCore
 
-  await deploy("Placeholder", {
-    contract: "Placeholder",
-    args: [],
-    from: deployer,
-    log: true,
-    autoMine: true,
-    skipIfAlreadyDeployed: false,
-  });
+  console.log("No contracts to deploy yet. Phase 1 complete.");
 };
 
 func.tags = ["deploy"];
