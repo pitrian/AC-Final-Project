@@ -1,5 +1,6 @@
 import { task } from "hardhat/config";
 import "@openzeppelin/hardhat-upgrades";
+import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-verify";
 import "hardhat-contract-sizer";
 import "hardhat-abi-exporter";

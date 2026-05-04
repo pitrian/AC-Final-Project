@@ -10,12 +10,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(hre.network.name);
   console.log("====================");
 
-  // Deployments will be added as contracts are implemented
-  // Phase 2: MockUSDC
-  // Phase 3: VaultManager
-  // Phase 4: SavingCore
+  console.log("Deploying MockUSDC...");
+  const mockUSDC = await deploy("MockUSDC", {
+    contract: "MockUSDC",
+    args: [],
+    from: deployer,
+    log: true,
+    autoMine: true,
+  });
 
-  console.log("No contracts to deploy yet. Phase 1 complete.");
+  console.log("MockUSDC deployed to:", mockUSDC.address);
+  console.log("Owner:", deployer);
 };
 
 func.tags = ["deploy"];

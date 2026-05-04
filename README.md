@@ -71,17 +71,17 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement ERC20 token với 6 decimals
 
 **Tasks:**
-- [ ] Tạo `contracts/tokens/MockUSDC.sol`
-- [ ] Kế thừa ERC20 của OpenZeppelin
-- [ ] Set decimals = 6
-- [ ] Thêm function `mint(address to, uint256 amount)`
-- [ ] Thêm function `burn(uint256 amount)` (optional)
-- [ ] Viết unit tests cơ bản
+- [x] Tạo `contracts/tokens/MockUSDC.sol`
+- [x] Kế thừa ERC20 của OpenZeppelin
+- [x] Set decimals = 6
+- [x] Thêm function `mint(address to, uint256 amount)`
+- [x] Thêm function `burn(uint256 amount)` (optional)
+- [x] Viết unit tests cơ bản
 
 **Definition of Done:**
-- [ ] Contract deploy được trên local network
-- [ ] Mint/Balance hoạt động đúng
-- [ ] Decimals trả về 6
+- [x] Contract deploy được trên local network
+- [x] Mint/Balance hoạt động đúng
+- [x] Decimals trả về 6
 
 ---
 
@@ -90,15 +90,15 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Test đầy đủ MockUSDC functions
 
 **Tasks:**
-- [ ] Test `mint()` - mint cho nhiều accounts
-- [ ] Test `transfer()` - chuyển token
-- [ ] Test `approve()` & `transferFrom()`
-- [ ] Test `burn()` (nếu có)
-- [ ] Test edge cases (overflow, zero address)
+- [x] Test `mint()` - mint cho nhiều accounts
+- [x] Test `transfer()` - chuyển token
+- [x] Test `approve()` & `transferFrom()`
+- [x] Test `burn()` (nếu có)
+- [x] Test edge cases (overflow, zero address)
 
 **Definition of Done:**
-- [ ] Tất cả basic tests pass
-- [ ] Coverage >80% cho MockUSDC
+- [x] Tất cả basic tests pass
+- [x] Coverage >80% cho MockUSDC
 
 ---
 
