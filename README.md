@@ -109,19 +109,19 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement VaultManager với core functions
 
 **Tasks:**
-- [ ] Tạo `contracts/VaultManager.sol`
-- [ ] Import Ownable (OpenZeppelin)
-- [ ] Import Pausable (OpenZeppelin)
-- [ ] Khai báo state variables:
+- [x] Tạo `contracts/VaultManager.sol`
+- [x] Import Ownable (OpenZeppelin)
+- [x] Import Pausable (OpenZeppelin)
+- [x] Khai báo state variables:
   - `underlyingToken` (address)
   - `vaultBalance` (uint256)
   - `feeReceiver` (address)
-- [ ] Implement `fundVault(uint256 amount)`
-- [ ] Implement `withdrawVault(uint256 amount)`
+- [x] Implement `fundVault(uint256 amount)`
+- [x] Implement `withdrawVault(uint256 amount)`
 
 **Definition of Done:**
-- [ ] Contract compile thành công
-- [ ] Basic functions có thể gọi được
+- [x] Contract compile thành công
+- [x] Basic functions có thể gọi được
 
 ---
 
@@ -130,16 +130,16 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Thêm pause/unpause và access control
 
 **Tasks:**
-- [ ] Implement `setFeeReceiver(address _feeReceiver)`
-- [ ] Implement `pause()` & `unpause()`
-- [ ] Thêm onlyOwner modifiers
-- [ ] Implement `getVaultBalance()`
-- [ ] Viết events: `VaultFunded`, `VaultWithdrawn`, `FeeReceiverUpdated`
+- [x] Implement `setFeeReceiver(address _feeReceiver)`
+- [x] Implement `pause()` & `unpause()`
+- [x] Thêm onlyOwner modifiers
+- [x] Implement `getVaultBalance()`
+- [x] Viết events: `VaultFunded`, `VaultWithdrawn`, `FeeReceiverUpdated`
 
 **Definition of Done:**
-- [ ] Pause/Unpause hoạt động đúng
-- [ ] Access control được enforce
-- [ ] Events được emit đúng
+- [x] Pause/Unpause hoạt động đúng
+- [x] Access control được enforce
+- [x] Events được emit đúng
 
 ---
 
@@ -148,16 +148,16 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Test đầy đủ VaultManager
 
 **Tasks:**
-- [ ] Test `fundVault()` - happy path
-- [ ] Test `withdrawVault()` - happy path
-- [ ] Test `withdrawVault()` - không đủ balance
-- [ ] Test `setFeeReceiver()`
-- [ ] Test `pause()` & `unpause()`
-- [ ] Test access control (onlyOwner)
+- [x] Test `fundVault()` - happy path
+- [x] Test `withdrawVault()` - happy path
+- [x] Test `withdrawVault()` - không đủ balance
+- [x] Test `setFeeReceiver()`
+- [x] Test `pause()` & `unpause()`
+- [x] Test access control (onlyOwner)
 
 **Definition of Done:**
-- [ ] Tất cả tests pass
-- [ ] Coverage >85% cho VaultManager
+- [x] Tất cả tests pass
+- [x] Coverage >85% cho VaultManager
 
 ---
 

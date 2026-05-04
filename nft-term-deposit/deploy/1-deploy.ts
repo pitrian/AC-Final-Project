@@ -10,6 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(hre.network.name);
   console.log("====================");
 
+  // Phase 2: Deploy MockUSDC
   console.log("Deploying MockUSDC...");
   const mockUSDC = await deploy("MockUSDC", {
     contract: "MockUSDC",
@@ -18,9 +19,20 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
     autoMine: true,
   });
-
   console.log("MockUSDC deployed to:", mockUSDC.address);
-  console.log("Owner:", deployer);
+
+  // Phase 3: Deploy VaultManager
+  const feeReceiver = deployer;
+  console.log("Deploying VaultManager...");
+  const vaultManager = await deploy("VaultManager", {
+    contract: "VaultManager",
+    args: [mockUSDC.address, feeReceiver],
+    from: deployer,
+    log: true,
+    autoMine: true,
+  });
+  console.log("VaultManager deployed to:", vaultManager.address);
+  console.log("Fee receiver:", feeReceiver);
 };
 
 func.tags = ["deploy"];
