@@ -24,7 +24,7 @@ Tổng thời gian: 20 ngày (4 tuần)
 ├── Phase 6: Frontend Demo              (3 ngày)
 └── Phase 7: Integration & Polish       (1 ngày)
 ```
-
+--
 ---
 
 ## 📅 Phase 1: Setup & Infrastructure
