@@ -840,4 +840,32 @@ describe("SavingCore", function () {
       expect(balanceAfter - balanceBefore).to.equal(principal + expected);
     });
   });
+  describe("ERC721 Metadata", function () {
+    let planId: bigint;
+
+    beforeEach(async function () {
+      planId = await createPlan(TENOR_30_DAYS, APR_10_PCT);
+      await openDeposit(user1, planId, DEPOSIT_AMOUNT);
+    });
+
+    it("Should return correct tokenURI", async function () {
+      const uri = await savingCore.tokenURI(1);
+      expect(uri).to.equal("term-deposit/1");
+    });
+
+    it("Should support ERC721 interface", async function () {
+      const ERC721_INTERFACE = "0x80ac58cd";
+      expect(await savingCore.supportsInterface(ERC721_INTERFACE)).to.equal(true);
+    });
+
+    it("Should support ERC721Metadata interface", async function () {
+      const METADATA_INTERFACE = "0x5b5e139f";
+      expect(await savingCore.supportsInterface(METADATA_INTERFACE)).to.equal(true);
+    });
+
+    it("Should support ERC721URIStorage interface", async function () {
+      const URI_STORAGE_INTERFACE = "0x01ffc9a7";
+      expect(await savingCore.supportsInterface(URI_STORAGE_INTERFACE)).to.equal(true);
+    });
+  });
 });
