@@ -4,6 +4,7 @@ import ConnectWallet from './components/ConnectWallet'
 import PlanList from './components/PlanList'
 import DepositForm from './components/DepositForm'
 import MyDeposits from './components/MyDeposits'
+import AdminPanel from './components/AdminPanel'
 import { useWallet } from './hooks/useWallet'
 import { useContracts } from './hooks/useContracts'
 import type { SavingPlan } from './types'
@@ -46,64 +47,94 @@ function App() {
 
       {wallet.isConnected && (
         <main className="main">
-          <div className="tabs">
-            <button
-              className={`tab ${activeTab === 'plans' ? 'active' : ''}`}
-              onClick={() => setActiveTab('plans')}
-            >
-              Plans
-            </button>
-            <button
-              className={`tab ${activeTab === 'deposits' ? 'active' : ''}`}
-              onClick={() => setActiveTab('deposits')}
-            >
-              My Deposits
-            </button>
-          </div>
-
-          {activeTab === 'plans' && (
-            <div className="tab-content">
-              <section className="section">
-                <h2>Available Plans</h2>
-                <PlanList
-                  plans={contracts.plans}
-                  onSelectPlan={setSelectedPlanId}
-                  selectedPlanId={selectedPlanId}
-                />
-              </section>
-
-              {selectedPlan && (
-                <section className="section">
-                  <DepositForm
-                    selectedPlanId={selectedPlanId}
-                    planTenorDays={Number(selectedPlan.tenorDays)}
-                    planMinDeposit={Number(formatUnits(selectedPlan.minDeposit, 6))}
-                    planMaxDeposit={Number(formatUnits(selectedPlan.maxDeposit, 6))}
-                    usdcBalance={contracts.usdcBalance}
-                    onDeposit={contracts.openDeposit}
+          {!contracts.owner ? (
+            <div className="loading">Loading admin status... (Owner: {contracts.owner}, You: {wallet.address})</div>
+          ) : (
+            <>
+              <div className="debug-info" style={{background: '#f0f0f0', padding: '10px', margin: '10px 0', fontSize: '12px', fontFamily: 'monospace'}}>
+                <div>Owner from contract: <strong>{contracts.owner}</strong></div>
+                <div>Your wallet address: <strong>{wallet.address}</strong></div>
+                <div>Owner lowercase: {contracts.owner?.toLowerCase()}</div>
+                <div>You lowercase: {wallet.address?.toLowerCase()}</div>
+                <div>Match: <strong>{contracts.owner?.toLowerCase() === wallet.address?.toLowerCase() ? '✅ YES - ADMIN' : '❌ NO - USER'}</strong></div>
+              </div>
+              {contracts.owner?.toLowerCase() === wallet.address?.toLowerCase() ? (
+                <>
+                  <div className="admin-badge">Admin Mode: {contracts.owner.slice(0, 6)}...{contracts.owner.slice(-4)}</div>
+                  <AdminPanel
+                    owner={contracts.owner}
+                    onCreatePlan={contracts.createPlan}
+                    onUpdatePlan={contracts.updatePlan}
+                    onEnablePlan={contracts.enablePlan}
+                    onDisablePlan={contracts.disablePlan}
                     loading={contracts.loading}
                     error={contracts.error}
                   />
-                </section>
-              )}
-            </div>
-          )}
+                </>
+              ) : (
+                <>
+                  <div className="tabs">
+                    <button
+                      className={`tab ${activeTab === 'plans' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('plans')}
+                    >
+                      Plans
+                    </button>
+                    <button
+                      className={`tab ${activeTab === 'deposits' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('deposits')}
+                    >
+                      My Deposits
+                    </button>
+                  </div>
 
-          {activeTab === 'deposits' && (
-            <div className="tab-content">
-              <section className="section">
-                <h2>My Deposits</h2>
-                <MyDeposits
-                  deposits={contracts.userDeposits}
-                  plans={plansMap}
-                  onWithdraw={contracts.withdraw}
-                  onEarlyWithdraw={contracts.earlyWithdraw}
-                  onRenew={contracts.renewDeposit}
-                  loading={contracts.loading}
-                  error={contracts.error}
-                />
-              </section>
-            </div>
+                  {activeTab === 'plans' && (
+                    <div className="tab-content">
+                      <section className="section">
+                        <h2>Available Plans</h2>
+                        <PlanList
+                          plans={contracts.plans}
+                          onSelectPlan={setSelectedPlanId}
+                          selectedPlanId={selectedPlanId}
+                        />
+                      </section>
+
+                      {selectedPlan && (
+                        <section className="section">
+                          <DepositForm
+                            selectedPlanId={selectedPlanId}
+                            planTenorDays={Number(selectedPlan.tenorDays)}
+                            planMinDeposit={Number(formatUnits(selectedPlan.minDeposit, 6))}
+                            planMaxDeposit={Number(formatUnits(selectedPlan.maxDeposit, 6))}
+                            usdcBalance={contracts.usdcBalance}
+                            onDeposit={contracts.openDeposit}
+                            loading={contracts.loading}
+                            error={contracts.error}
+                          />
+                        </section>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'deposits' && (
+                    <div className="tab-content">
+                      <section className="section">
+                        <h2>My Deposits</h2>
+                        <MyDeposits
+                          deposits={contracts.userDeposits}
+                          plans={plansMap}
+                          onWithdraw={contracts.withdraw}
+                          onEarlyWithdraw={contracts.earlyWithdraw}
+                          onRenew={contracts.renewDeposit}
+                          loading={contracts.loading}
+                          error={contracts.error}
+                        />
+                      </section>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </main>
       )}

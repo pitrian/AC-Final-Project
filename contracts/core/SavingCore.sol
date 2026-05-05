@@ -9,21 +9,44 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/IVaultManager.sol";
 
+/// @title SavingCore
+/// @author NFT-Powered Term Deposit Protocol
+/// @notice Core contract for managing term deposits as NFT certificates
+/// @dev Extends ERC721 for NFT minting, with Ownable and Pausable functionality
 contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
+    /// @notice Number of seconds in a year (365 days)
     uint256 private constant SECONDS_PER_YEAR = 31536000;
+    
+    /// @notice Basis points divisor (10000 = 100%)
     uint256 private constant BASIS_POINTS = 10000;
+    
+    /// @notice Grace period for auto-renewal (3 days after maturity)
     uint256 private constant GRACE_PERIOD = 3 days;
 
+    /// @notice The underlying ERC20 token (e.g., MockUSDC)
     IERC20 public immutable underlyingToken;
+    
+    /// @notice VaultManager contract for managing vault funds
     IVaultManager public immutable vaultManager;
+    
+    /// @notice Address receiving early withdrawal penalties
     address public feeReceiver;
 
+    /// @notice Total number of plans created
     uint256 public planCount;
+    
+    /// @notice Total number of deposits opened
     uint256 public depositCount;
 
+    /// @notice Mapping from plan ID to plan details
     mapping(uint256 => SavingPlan) public plans;
+    
+    /// @notice Mapping from deposit ID to deposit details
     mapping(uint256 => DepositInfo) public deposits;
 
+    /// @notice Status of a deposit
+    /// @dev Active: deposit is ongoing, Withdrawn: deposit has been withdrawn,
+    ///      ManualRenewed: manually renewed, AutoRenewed: auto-renewed
     enum DepositStatus {
         Active,
         Withdrawn,
@@ -31,6 +54,13 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         AutoRenewed
     }
 
+    /// @notice Plan structure defining term deposit parameters
+    /// @param tenorDays Duration of the plan in days
+    /// @param aprBps Annual percentage rate in basis points (100 = 1%)
+    /// @param minDeposit Minimum deposit amount (in underlying token decimals)
+    /// @param maxDeposit Maximum deposit amount (in underlying token decimals)
+    /// @param penaltyBps Early withdrawal penalty in basis points
+    /// @param enabled Whether the plan is available for new deposits
     struct SavingPlan {
         uint256 tenorDays;
         uint256 aprBps;
@@ -40,6 +70,14 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         bool enabled;
     }
 
+    /// @notice Deposit information structure
+    /// @param owner Address of the deposit owner
+    /// @param planId ID of the plan used for this deposit
+    /// @param principal Initial deposit amount
+    /// @param maturityAt Unix timestamp when deposit matures
+    /// @param aprBpsAtOpen APR snapshotted at opening (in basis points)
+    /// @param penaltyBpsAtOpen Penalty snapshotted at opening (in basis points)
+    /// @param status Current status of the deposit
     struct DepositInfo {
         address owner;
         uint256 planId;
@@ -50,31 +88,112 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         DepositStatus status;
     }
 
+    /// @notice Thrown when attempting to set a zero address
     error ZeroAddress();
+    
+    /// @notice Thrown when APR is set to zero
     error InvalidApr();
+    
+    /// @notice Thrown when tenor days is set to zero
     error InvalidTenor();
+    
+    /// @notice Thrown when accessing a non-existent plan
     error PlanDoesNotExist();
+    
+    /// @notice Thrown when attempting to use a disabled plan
     error PlanNotEnabled();
+    
+    /// @notice Thrown when deposit amount is below minimum
     error DepositBelowMinimum();
+    
+    /// @notice Thrown when deposit amount exceeds maximum
     error DepositAboveMaximum();
+    
+    /// @notice Thrown when attempting to withdraw before maturity
     error DepositNotMatured();
+    
+    /// @notice Thrown when attempting to withdraw an already withdrawn deposit
     error AlreadyWithdrawn();
+    
+    /// @notice Thrown when attempting to renew an already renewed deposit
     error AlreadyRenewed();
+    
+    /// @notice Thrown when caller is not the deposit owner
     error NotDepositOwner();
+    
+    /// @notice Thrown when attempting auto-renew before grace period ends
     error GracePeriodNotOver();
+    
+    /// @notice Thrown when vault has insufficient balance for interest payout
     error InsufficientVaultBalance();
+    
+    /// @notice Thrown when attempting operation while contract is paused
     error CoreIsPaused();
 
+    /// @notice Emitted when a new savings plan is created
+    /// @param planId ID of the newly created plan
+    /// @param tenorDays Duration of the plan in days
+    /// @param aprBps Annual percentage rate in basis points
+    /// @param minDeposit Minimum deposit amount
+    /// @param maxDeposit Maximum deposit amount
+    /// @param penaltyBps Early withdrawal penalty in basis points
     event PlanCreated(uint256 indexed planId, uint256 tenorDays, uint256 aprBps, uint256 minDeposit, uint256 maxDeposit, uint256 penaltyBps);
+    
+    /// @notice Emitted when a plan's APR is updated
+    /// @param planId ID of the plan
+    /// @param newAprBps New APR in basis points
     event PlanUpdated(uint256 indexed planId, uint256 newAprBps);
+    
+    /// @notice Emitted when a plan is enabled
+    /// @param planId ID of the plan
     event PlanEnabled(uint256 indexed planId);
+    
+    /// @notice Emitted when a plan is disabled
+    /// @param planId ID of the plan
     event PlanDisabled(uint256 indexed planId);
+    
+    /// @notice Emitted when a new deposit is opened
+    /// @param depositId ID of the new deposit
+    /// @param owner Address of the depositor
+    /// @param planId ID of the plan used
+    /// @param principal Deposit amount
+    /// @param maturityAt Unix timestamp when deposit matures
     event DepositOpened(uint256 indexed depositId, address indexed owner, uint256 indexed planId, uint256 principal, uint256 maturityAt);
+    
+    /// @notice Emitted when a deposit is withdrawn at maturity
+    /// @param depositId ID of the deposit
+    /// @param owner Address of the depositor
+    /// @param principal Original deposit amount
+    /// @param interest Interest earned
+    /// @param total Total amount withdrawn (principal + interest)
     event Withdrawn(uint256 indexed depositId, address indexed owner, uint256 principal, uint256 interest, uint256 total);
+    
+    /// @notice Emitted when a deposit is withdrawn early
+    /// @param depositId ID of the deposit
+    /// @param owner Address of the depositor
+    /// @param principal Original deposit amount
+    /// @param penalty Penalty amount deducted
+    /// @param received Amount received after penalty
     event EarlyWithdrawn(uint256 indexed depositId, address indexed owner, uint256 principal, uint256 penalty, uint256 received);
+    
+    /// @notice Emitted when a deposit is renewed
+    /// @param oldDepositId ID of the original deposit
+    /// @param newDepositId ID of the new deposit
+    /// @param owner Address of the depositor
+    /// @param newPrincipal New principal (old principal + interest)
+    /// @param newPlanId ID of the plan used for renewal
     event Renewed(uint256 indexed oldDepositId, uint256 indexed newDepositId, address indexed owner, uint256 newPrincipal, uint256 newPlanId);
+    
+    /// @notice Emitted when the fee receiver is updated
+    /// @param oldReceiver Previous fee receiver address
+    /// @param newReceiver New fee receiver address
     event FeeReceiverUpdated(address indexed oldReceiver, address indexed newReceiver);
 
+    /// @notice Initialize the SavingCore contract
+    /// @dev Sets up ERC721 NFT with name "Term Deposit Certificate" and symbol "TDC"
+    /// @param _underlyingToken Address of the ERC20 token (e.g., USDC)
+    /// @param _vaultManager Address of the VaultManager contract
+    /// @param _feeReceiver Address that receives early withdrawal penalties
     constructor(
         address _underlyingToken,
         address _vaultManager,
@@ -88,22 +207,46 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         feeReceiver = _feeReceiver;
     }
 
+    /// @notice Base URI for computing tokenURI
+    /// @dev Overrides ERC721URIStorage._baseURI()
     function _baseURI() internal pure override returns (string memory) {
         return "";
     }
 
+    /// @notice Returns the URI for a given token ID
+    /// @dev Overrides ERC721.tokenURI() and ERC721URIStorage.tokenURI()
+    /// @param tokenId ID of the token to query
+    /// @return The token URI string
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
+    /// @notice Checks if the contract supports an interface
+    /// @dev Overrides ERC721.supportsInterface() and ERC721URIStorage.supportsInterface()
+    /// @param interfaceId The interface ID to check
+    /// @return True if the interface is supported
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
+    /// @notice Calculate interest for a given principal, APR, and duration
+    /// @dev Uses formula: (principal * aprBps * durationSeconds) / (SECONDS_PER_YEAR * BASIS_POINTS)
+    /// @param principal The deposit principal amount
+    /// @param aprBps Annual percentage rate in basis points
+    /// @param durationSeconds Duration in seconds
+    /// @return The calculated interest amount
     function _calculateInterest(uint256 principal, uint256 aprBps, uint256 durationSeconds) internal pure returns (uint256) {
         return (principal * aprBps * durationSeconds) / (SECONDS_PER_YEAR * BASIS_POINTS);
     }
 
+    /// @notice Create a new savings plan
+    /// @dev Only owner can call. Plan is created with enabled=false
+    /// @param tenorDays Duration of the plan in days
+    /// @param aprBps Annual percentage rate in basis points (100 = 1%)
+    /// @param minDeposit Minimum deposit amount (in underlying token decimals)
+    /// @param maxDeposit Maximum deposit amount (in underlying token decimals)
+    /// @param penaltyBps Early withdrawal penalty in basis points
+    /// @return planId The ID of the newly created plan
     function createPlan(
         uint256 tenorDays,
         uint256 aprBps,
@@ -130,6 +273,10 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         return planId;
     }
 
+    /// @notice Update the APR of an existing plan
+    /// @dev Only owner can call. Does not affect existing deposits (APR snapshotted at opening)
+    /// @param planId ID of the plan to update
+    /// @param newAprBps New APR in basis points (100 = 1%)
     function updatePlan(uint256 planId, uint256 newAprBps) external onlyOwner {
         if (planId == 0 || planId > planCount) revert PlanDoesNotExist();
         if (newAprBps == 0) revert InvalidApr();
@@ -138,23 +285,37 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         emit PlanUpdated(planId, newAprBps);
     }
 
+    /// @notice Enable a plan for new deposits
+    /// @dev Only owner can call
+    /// @param planId ID of the plan to enable
     function enablePlan(uint256 planId) external onlyOwner {
         if (planId == 0 || planId > planCount) revert PlanDoesNotExist();
         plans[planId].enabled = true;
         emit PlanEnabled(planId);
     }
 
+    /// @notice Disable a plan from accepting new deposits
+    /// @dev Only owner can call. Existing deposits remain unaffected
+    /// @param planId ID of the plan to disable
     function disablePlan(uint256 planId) external onlyOwner {
         if (planId == 0 || planId > planCount) revert PlanDoesNotExist();
         plans[planId].enabled = false;
         emit PlanDisabled(planId);
     }
 
+    /// @notice Get details of a specific plan
+    /// @param planId ID of the plan to query
+    /// @return SavingPlan structure with plan details
     function getPlan(uint256 planId) external view returns (SavingPlan memory) {
         if (planId == 0 || planId > planCount) revert PlanDoesNotExist();
         return plans[planId];
     }
 
+    /// @notice Open a new term deposit
+    /// @dev Mints an NFT certificate. APR and penalty are snapshotted at opening.
+    /// @param planId ID of the plan to use
+    /// @param amount Deposit amount (in underlying token decimals)
+    /// @return depositId The ID of the newly created deposit
     function openDeposit(uint256 planId, uint256 amount) external whenNotPaused returns (uint256) {
         if (planId == 0 || planId > planCount) revert PlanDoesNotExist();
         SavingPlan memory plan = plans[planId];
@@ -184,6 +345,9 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         return depositId;
     }
 
+    /// @notice Withdraw a matured deposit
+    /// @dev Burns the NFT. Pays principal + interest (from vault)
+    /// @param depositId ID of the deposit to withdraw
     function withdraw(uint256 depositId) external whenNotPaused {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
@@ -204,6 +368,9 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         emit Withdrawn(depositId, deposit.owner, deposit.principal, interest, total);
     }
 
+    /// @notice Withdraw a deposit before maturity (early withdrawal)
+    /// @dev No interest paid. Penalty is deducted and sent to feeReceiver
+    /// @param depositId ID of the deposit to withdraw early
     function earlyWithdraw(uint256 depositId) external whenNotPaused {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
@@ -223,6 +390,11 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         emit EarlyWithdrawn(depositId, deposit.owner, deposit.principal, penalty, received);
     }
 
+    /// @notice Manually renew a matured deposit with a new plan
+    /// @dev Uses current market rate (new plan's APR). Marks old deposit as ManualRenewed
+    /// @param depositId ID of the deposit to renew
+    /// @param newPlanId ID of the plan to use for renewal
+    /// @return newDepositId ID of the newly created deposit
     function renewDeposit(uint256 depositId, uint256 newPlanId) external whenNotPaused returns (uint256) {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
@@ -259,6 +431,10 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         return newDepositId;
     }
 
+    /// @notice Automatically renew a matured deposit after grace period
+    /// @dev Anyone can call. Uses locked APR from original deposit. Marks old as AutoRenewed
+    /// @param depositId ID of the deposit to auto-renew
+    /// @return newDepositId ID of the newly created deposit
     function autoRenewDeposit(uint256 depositId) external whenNotPaused returns (uint256) {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
@@ -293,6 +469,9 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         return newDepositId;
     }
 
+    /// @notice Update the fee receiver address
+    /// @dev Only owner can call
+    /// @param _feeReceiver New fee receiver address
     function setFeeReceiver(address _feeReceiver) external onlyOwner {
         if (_feeReceiver == address(0)) revert ZeroAddress();
         address oldReceiver = feeReceiver;
@@ -300,18 +479,27 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         emit FeeReceiverUpdated(oldReceiver, _feeReceiver);
     }
 
+    /// @notice Pause the contract
+    /// @dev Only owner can call. Blocks deposit, withdraw, renew operations
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice Unpause the contract
+    /// @dev Only owner can call. Restores all functionality
     function unpause() external onlyOwner {
         _unpause();
     }
 
+    /// @notice Check if the contract is paused
+    /// @return True if the contract is paused
     function isPaused() external view returns (bool) {
         return paused();
     }
 
+    /// @notice Get details of a specific deposit
+    /// @param depositId ID of the deposit to query
+    /// @return DepositInfo structure with deposit details
     function getDeposit(uint256 depositId) external view returns (DepositInfo memory) {
         if (depositId == 0 || depositId > depositCount) revert PlanDoesNotExist();
         return deposits[depositId];

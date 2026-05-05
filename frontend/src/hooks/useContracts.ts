@@ -11,6 +11,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   const [plans, setPlans] = useState<SavingPlan[]>([])
   const [userDeposits, setUserDeposits] = useState<(DepositInfo & { depositId: number })[]>([])
   const [usdcBalance, setUsdcBalance] = useState<string>('0')
+  const [owner, setOwner] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,6 +23,36 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
       vaultManager: new Contract(VAULT_MANAGER_ADDRESS, VaultManagerABI, signer),
     }
   }, [signer])
+
+  useEffect(() => {
+    if (signer) {
+      const loadOwner = async () => {
+        try {
+          const contracts = getContracts()
+          if (!contracts) return
+          const ownerAddress = await contracts.savingCore.owner()
+          setOwner(ownerAddress.toLowerCase())
+        } catch (err) {
+          console.error('Failed to load owner:', err)
+        }
+      }
+      loadOwner()
+    } else {
+      setOwner(null)
+    }
+  }, [signer, getContracts])
+
+  const isOwner = useCallback(async (address: string) => {
+    if (!signer) return false
+    try {
+      const contracts = getContracts()
+      if (!contracts) return false
+      const ownerAddress = await contracts.savingCore.owner()
+      return ownerAddress.toLowerCase() === address.toLowerCase()
+    } catch {
+      return false
+    }
+  }, [signer, getContracts])
 
   const loadPlans = useCallback(async () => {
     if (!signer) return
@@ -185,6 +216,88 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     }
   }, [signer, getContracts, loadUserDeposits])
 
+  const createPlan = useCallback(async (tenorDays: number, aprBps: number, minDeposit: string, maxDeposit: string, penaltyBps: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const minWei = parseUnits(minDeposit, 6)
+      const maxWei = parseUnits(maxDeposit, 6)
+      const tx = await contracts.savingCore.createPlan(tenorDays, aprBps, minWei, maxWei, penaltyBps)
+      await tx.wait()
+
+      await loadPlans()
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadPlans])
+
+  const updatePlan = useCallback(async (planId: number, newAprBps: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const tx = await contracts.savingCore.updatePlan(planId, newAprBps)
+      await tx.wait()
+
+      await loadPlans()
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadPlans])
+
+  const enablePlan = useCallback(async (planId: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const tx = await contracts.savingCore.enablePlan(planId)
+      await tx.wait()
+
+      await loadPlans()
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadPlans])
+
+  const disablePlan = useCallback(async (planId: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const tx = await contracts.savingCore.disablePlan(planId)
+      await tx.wait()
+
+      await loadPlans()
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadPlans])
+
   useEffect(() => {
     if (signer) {
       loadPlans()
@@ -199,12 +312,18 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     plans,
     userDeposits,
     usdcBalance,
+    owner,
+    isOwner,
     loading,
     error,
     openDeposit,
     withdraw,
     earlyWithdraw,
     renewDeposit,
+    createPlan,
+    updatePlan,
+    enablePlan,
+    disablePlan,
     refreshData: () => {
       if (signer) {
         signer.getAddress().then(async (address: string) => {
