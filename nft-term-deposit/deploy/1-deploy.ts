@@ -32,7 +32,26 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true,
   });
   console.log("VaultManager deployed to:", vaultManager.address);
-  console.log("Fee receiver:", feeReceiver);
+
+  // Phase 4: Deploy SavingCore
+  console.log("Deploying SavingCore...");
+  const savingCore = await deploy("SavingCore", {
+    contract: "SavingCore",
+    args: [mockUSDC.address, vaultManager.address, feeReceiver],
+    from: deployer,
+    log: true,
+    autoMine: true,
+  });
+  console.log("SavingCore deployed to:", savingCore.address);
+
+  // Post-deployment setup
+  console.log("Setting up approvals...");
+  const MockUSDC = await ethers.getContractAt("MockUSDC", mockUSDC.address);
+  const VaultManager = await ethers.getContractAt("VaultManager", vaultManager.address);
+  await MockUSDC.approve(vaultManager.address, ethers.MaxUint256);
+  await VaultManager.approveSpender(savingCore.address, ethers.MaxUint256);
+
+  console.log("Deployment complete!");
 };
 
 func.tags = ["deploy"];

@@ -168,15 +168,15 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Thiết lập data structures và interfaces
 
 **Tasks:**
-- [ ] Tạo `contracts/SavingCore.sol`
-- [ ] Define `SavingPlan` struct:
+- [x] Tạo `contracts/SavingCore.sol`
+- [x] Define `SavingPlan` struct:
   - `tenorDays` (uint256)
   - `aprBps` (uint256)
   - `minDeposit` (uint256)
   - `maxDeposit` (uint256)
   - `penaltyBps` (uint256)
   - `enabled` (bool)
-- [ ] Define `DepositInfo` struct:
+- [x] Define `DepositInfo` struct:
   - `owner` (address)
   - `planId` (uint256)
   - `principal` (uint256)
@@ -184,12 +184,12 @@ Tổng thời gian: 20 ngày (4 tuần)
   - `aprBpsAtOpen` (uint256)
   - `penaltyBpsAtOpen` (uint256)
   - `status` (enum)
-- [ ] Define Status enum: `Active`, `Withdrawn`, `ManualRenewed`, `AutoRenewed`
-- [ ] State variables: `plans`, `deposits`, `planCount`, `depositCount`
+- [x] Define Status enum: `Active`, `Withdrawn`, `ManualRenewed`, `AutoRenewed`
+- [x] State variables: `plans`, `deposits`, `planCount`, `depositCount`
 
 **Definition of Done:**
-- [ ] Structs được định nghĩa đầy đủ
-- [ ] Contract compile không lỗi
+- [x] Structs được định nghĩa đầy đủ
+- [x] Contract compile không lỗi
 
 ---
 
@@ -198,17 +198,17 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement admin functions cho plan management
 
 **Tasks:**
-- [ ] Implement `createPlan(...)` - tạo gói tiết kiệm
-- [ ] Implement `updatePlan(uint256 planId, uint256 newAprBps)`
-- [ ] Implement `enablePlan(uint256 planId)`
-- [ ] Implement `disablePlan(uint256 planId)`
-- [ ] Implement `getPlan(uint256 planId)`
-- [ ] Viết events: `PlanCreated`, `PlanUpdated`
+- [x] Implement `createPlan(...)` - tạo gói tiết kiệm
+- [x] Implement `updatePlan(uint256 planId, uint256 newAprBps)`
+- [x] Implement `enablePlan(uint256 planId)`
+- [x] Implement `disablePlan(uint256 planId)`
+- [x] Implement `getPlan(uint256 planId)`
+- [x] Viết events: `PlanCreated`, `PlanUpdated`
 
 **Definition of Done:**
-- [ ] Admin có thể tạo/update/enable/disable plans
-- [ ] Validation: APR > 0, tenorDays > 0
-- [ ] Events emit đúng
+- [x] Admin có thể tạo/update/enable/disable plans
+- [x] Validation: APR > 0, tenorDays > 0
+- [x] Events emit đúng
 
 ---
 
@@ -217,18 +217,18 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement mở khoản gửi và NFT minting
 
 **Tasks:**
-- [ ] Setup ERC721 (kế thừa hoặc compose)
-- [ ] Implement `openDeposit(uint256 planId, uint256 amount)`
-- [ ] Validate: plan exists, enabled, min/max deposit
-- [ ] Transfer token từ user vào contract
-- [ ] Mint NFT với metadata (snapshot APR, penalty)
-- [ ] Calculate `maturityAt = now + tenorDays`
-- [ ] Emit `DepositOpened` event
+- [x] Setup ERC721 (kế thừa hoặc compose)
+- [x] Implement `openDeposit(uint256 planId, uint256 amount)`
+- [x] Validate: plan exists, enabled, min/max deposit
+- [x] Transfer token từ user vào contract
+- [x] Mint NFT với metadata (snapshot APR, penalty)
+- [x] Calculate `maturityAt = now + tenorDays`
+- [x] Emit `DepositOpened` event
 
 **Definition of Done:**
-- [ ] User có thể gửi tiền và nhận NFT
-- [ ] APR & Penalty được snapshot vào NFT
-- [ ] Validation hoạt động đúng
+- [x] User có thể gửi tiền và nhận NFT
+- [x] APR & Penalty được snapshot vào NFT
+- [x] Validation hoạt động đúng
 
 ---
 
@@ -237,26 +237,26 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement rút tiền (đúng hạn và sớm)
 
 **Tasks:**
-- [ ] Implement interest calculation formula:
+- [x] Implement interest calculation formula:
   ```
   Interest = (principal * aprBps * tenorSeconds) / (31536000 * 10000)
   ```
-- [ ] Implement `withdraw(uint256 depositId)` - đúng hạn
+- [x] Implement `withdraw(uint256 depositId)` - đúng hạn
   - Tính interest
   - Burn NFT
   - Transfer (principal + interest) từ Vault
   - Emit `Withdrawn`
-- [ ] Implement early withdrawal logic:
+- [x] Implement early withdrawal logic:
   - Interest = 0
   - Penalty = (principal * penaltyBps) / 10000
   - User receives (principal - penalty)
   - Transfer penalty tới feeReceiver
-- [ ] Handle insufficient vault balance (revert)
+- [x] Handle insufficient vault balance (revert)
 
 **Definition of Done:**
-- [ ] Rút đúng hạn: principal + interest
-- [ ] Rút sớm: principal - penalty, không lãi
-- [ ] NFT bị burn sau withdraw
+- [x] Rút đúng hạn: principal + interest
+- [x] Rút sớm: principal - penalty, không lãi
+- [x] NFT bị burn sau withdraw
 
 ---
 
@@ -265,20 +265,20 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement manual renew
 
 **Tasks:**
-- [ ] Implement `renewDeposit(uint256 depositId, uint256 newPlanId)`
-- [ ] Validate: deposit exists, owner, not already withdrawn
-- [ ] Validate: now >= maturityAt (không được sớm)
-- [ ] Validate: newPlan exists & enabled
-- [ ] Tính interest từ NFT cũ
-- [ ] New principal = oldPrincipal + interest
-- [ ] Mint new NFT với APR mới (market rate)
-- [ ] Mark old NFT as `ManualRenewed`
-- [ ] Emit `Renewed` event
+- [x] Implement `renewDeposit(uint256 depositId, uint256 newPlanId)`
+- [x] Validate: deposit exists, owner, not already withdrawn
+- [x] Validate: now >= maturityAt (không được sớm)
+- [x] Validate: newPlan exists & enabled
+- [x] Tính interest từ NFT cũ
+- [x] New principal = oldPrincipal + interest
+- [x] Mint new NFT với APR mới (market rate)
+- [x] Mark old NFT as `ManualRenewed`
+- [x] Emit `Renewed` event
 
 **Definition of Done:**
-- [ ] Manual renew hoạt động đúng
-- [ ] Principal tích lũy đúng (gốc + lãi)
-- [ ] Old NFT bị mark không thể withdraw lại
+- [x] Manual renew hoạt động đúng
+- [x] Principal tích lũy đúng (gốc + lãi)
+- [x] Old NFT bị mark không thể withdraw lại
 
 ---
 
@@ -287,21 +287,21 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Implement auto-renew với grace period
 
 **Tasks:**
-- [ ] Define grace period = 3 days
-- [ ] Implement `autoRenewDeposit(uint256 depositId)`
-- [ ] Validate: now >= maturityAt + 3 days (grace period)
-- [ ] Validate: deposit is `Active` (not already renewed)
-- [ ] Tính interest từ NFT cũ (với APR cũ - locked)
-- [ ] New principal = oldPrincipal + interest
-- [ ] Mint new NFT với APR cũ (snapshot - NOT market rate!)
-- [ ] Mark old NFT as `AutoRenewed`
-- [ ] Emit `Renewed` event
-- [ ] Note: Anyone có thể trigger auto-renew (bot/keeper)
+- [x] Define grace period = 3 days
+- [x] Implement `autoRenewDeposit(uint256 depositId)`
+- [x] Validate: now >= maturityAt + 3 days (grace period)
+- [x] Validate: deposit is `Active` (not already renewed)
+- [x] Tính interest từ NFT cũ (với APR cũ - locked)
+- [x] New principal = oldPrincipal + interest
+- [x] Mint new NFT với APR cũ (snapshot - NOT market rate!)
+- [x] Mark old NFT as `AutoRenewed`
+- [x] Emit `Renewed` event
+- [x] Note: Anyone có thể trigger auto-renew (bot/keeper)
 
 **Definition of Done:**
-- [ ] Auto-renew chỉ hoạt động sau 3 ngày grace period
-- [ ] APR được lock (không dùng market rate)
-- [ ] Anyone có thể trigger (không cần owner)
+- [x] Auto-renew chỉ hoạt động sau 3 ngày grace period
+- [x] APR được lock (không dùng market rate)
+- [x] Anyone có thể trigger (không cần owner)
 
 ---
 
@@ -310,19 +310,19 @@ Tổng thời gian: 20 ngày (4 tuần)
 **Mục tiêu:** Thêm pause/unpause và kết nối VaultManager
 
 **Tasks:**
-- [ ] Import Pausable vào SavingCore
-- [ ] Implement `pause()` & `unpause()` (onlyOwner)
-- [ ] When paused: block withdraw, renew (manual & auto)
-- [ ] Kết nối với VaultManager:
+- [x] Import Pausable vào SavingCore
+- [x] Implement `pause()` & `unpause()` (onlyOwner)
+- [x] When paused: block withdraw, renew (manual & auto)
+- [x] Kết nối với VaultManager:
   - Deposit: chuyển token vào VaultManager (hoặc giữ trong contract)
   - Withdraw: gọi VaultManager để lấy lãi
   - Note: thiết kế tùy chọn - có thể giữ principal trong contract, lãi từ Vault
-- [ ] Review and fix any integration issues
+- [x] Review and fix any integration issues
 
 **Definition of Done:**
-- [ ] Pause blocks all withdraw/renew operations
-- [ ] Vault integration hoạt động đúng
-- [ ] All events emit correctly
+- [x] Pause blocks all withdraw/renew operations
+- [x] Vault integration hoạt động đúng
+- [x] All events emit correctly
 
 ---
 

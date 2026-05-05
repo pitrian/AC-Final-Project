@@ -44,6 +44,10 @@ contract VaultManager is Ownable, Pausable {
         emit VaultWithdrawn(to, amount);
     }
 
+    function approveSpender(address spender, uint256 amount) external onlyOwner {
+        underlyingToken.approve(spender, amount);
+    }
+
     function setFeeReceiver(address _feeReceiver) external onlyOwner {
         if (_feeReceiver == address(0)) revert ZeroAddress();
 
