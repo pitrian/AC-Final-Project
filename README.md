@@ -278,6 +278,14 @@ Access: `http://localhost:5173`
    - Or Early Withdraw (penalty applied)
    - Renew (select new plan)
    - Time Travel to test auto-renewal (3 days grace period)
+### 6. Test Sepolia
+```
+VITE_SAVING_CORE_ADDRESS=0xD5eFf.......
+VITE_MOCK_USDC_ADDRESS=0xef282......
+VITE_VAULT_MANAGER_ADDRESS=0x6695.....
+VITE_CHAIN_ID=11155111
+VITE_NETWORK_NAME=Sepolia Testnet
+```
 ---
 ## 🚀 Deployment
 ### Deployment Addresses

@@ -36,18 +36,18 @@ module.exports = {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    "sepolia": {
-      url: "https://eth-sepolia.public.blastapi.io",
-      chainId: 11155111,
-      accounts: testnetPrivateKey ? [testnetPrivateKey] : [],
-      timeout: 40000,
-    },
-    "ethereum": {
-      url: "https://eth-mainnet.public.blastapi.io",
-      chainId: 1,
-      accounts: mainnetPrivateKey ? [mainnetPrivateKey] : [],
-      timeout: 60000,
-    }
+     "sepolia": {
+       url: process.env.ALCHEMY_SEPOLIA_URL || "https://eth-sepolia.g.alchemy.com/v2/o7K3LHjW01rjqTPDH5USU",
+       chainId: 11155111,
+       accounts: testnetPrivateKey ? [testnetPrivateKey] : [],
+       timeout: 40000,
+     },
+     "ethereum": {
+       url: process.env.ALCHEMY_MAINNET_URL || "",
+       chainId: 1,
+       accounts: mainnetPrivateKey ? [mainnetPrivateKey] : [],
+       timeout: 60000,
+     }
   },
   solidity: {
     compilers: [

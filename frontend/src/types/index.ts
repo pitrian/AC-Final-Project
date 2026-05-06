@@ -33,4 +33,5 @@ export interface WalletState {
   usdcBalance: string
   isConnected: boolean
   isConnecting: boolean
+  chainId: number | null
 }

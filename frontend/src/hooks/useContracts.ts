@@ -7,7 +7,7 @@ const SAVING_CORE_ADDRESS = import.meta.env.VITE_SAVING_CORE_ADDRESS || ''
 const MOCK_USDC_ADDRESS = import.meta.env.VITE_MOCK_USDC_ADDRESS || ''
 const VAULT_MANAGER_ADDRESS = import.meta.env.VITE_VAULT_MANAGER_ADDRESS || ''
 
-export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProvider | null) {
+export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProvider | null, chainId: number | null) {
   const [plans, setPlans] = useState<SavingPlan[]>([])
   const [userDeposits, setUserDeposits] = useState<(DepositInfo & { depositId: number })[]>([])
   const [usdcBalance, setUsdcBalance] = useState<string>('0')
@@ -354,7 +354,11 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   }, [signer, getContracts, loadUsdcBalance])
 
   const increaseTime = useCallback(async (seconds: number) => {
-    if (!signer) return
+    if (!signer || !provider) return
+    // Only allow time travel on localhost (chainId 31337)
+    if (chainId !== 31337) {
+      throw new Error('Time travel only available on localhost')
+    }
     setLoading(true)
     setError(null)
     try {

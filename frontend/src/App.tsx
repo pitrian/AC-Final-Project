@@ -12,7 +12,7 @@ import './styles/App.css'
 
 function App() {
   const wallet = useWallet()
-  const contracts = useContracts(wallet.signer, wallet.provider)
+  const contracts = useContracts(wallet.signer, wallet.provider, wallet.chainId)
 
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<'plans' | 'deposits'>('plans')
