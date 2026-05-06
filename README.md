@@ -9,8 +9,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0.4-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge&logo=codecov)
 ![License](https://img.shields.io/badge/License-ISC-green?style=for-the-badge)
-
+</div>
 ---
+
 ## 📋 Project Overview
 **NFT-Powered Term Deposit Protocol** is a complete decentralized banking application that implements a term deposit (fixed deposit) system on the blockchain using NFT certificates.
 | Information        | Details                                                        |
@@ -383,7 +384,6 @@ Access: `http://localhost:5173`
 ✅ **COMPLETE** - Ready for Demo and Deployment!
 
 
-
 ---
 
-*Project completed successfully with 179 tests, 100% coverage, and full-featured React frontend!* 🎉
+*Project completed successfully with 179 tests, 100% coverage, and full-featured React frontend!* 🎉</div>
