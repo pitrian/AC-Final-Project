@@ -231,12 +231,17 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
 
     /// @notice Calculate interest for a given principal, APR, and duration
     /// @dev Uses formula: (principal * aprBps * durationSeconds) / (SECONDS_PER_YEAR * BASIS_POINTS)
+    ///      Includes precision fix to avoid truncation errors
     /// @param principal The deposit principal amount
     /// @param aprBps Annual percentage rate in basis points
     /// @param durationSeconds Duration in seconds
-    /// @return The calculated interest amount
+    /// @return The calculated interest amount (with proper rounding)
     function _calculateInterest(uint256 principal, uint256 aprBps, uint256 durationSeconds) internal pure returns (uint256) {
-        return (principal * aprBps * durationSeconds) / (SECONDS_PER_YEAR * BASIS_POINTS);
+        // Use higher precision to avoid truncation
+        // Add BASIS_POINTS/2 for rounding instead of truncation
+        uint256 numerator = principal * aprBps * durationSeconds;
+        uint256 denominator = SECONDS_PER_YEAR * BASIS_POINTS;
+        return (numerator + denominator / 2) / denominator;
     }
 
     /// @notice Create a new savings plan

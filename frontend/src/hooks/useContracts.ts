@@ -14,6 +14,17 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   const [owner, setOwner] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [blockTimestamp, setBlockTimestamp] = useState<number>(Math.floor(Date.now() / 1000))
+
+  const fetchBlockTimestamp = useCallback(async () => {
+    if (!provider) return
+    try {
+      const block = await provider.getBlock('latest')
+      if (block) setBlockTimestamp(block.timestamp)
+    } catch (err) {
+      console.error('Failed to fetch block timestamp:', err)
+    }
+  }, [provider])
 
   const getContracts = useCallback(() => {
     if (!signer) return null
@@ -216,6 +227,26 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     }
   }, [signer, getContracts, loadUserDeposits])
 
+  const autoRenewDeposit = useCallback(async (depositId: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const tx = await contracts.savingCore.autoRenewDeposit(depositId)
+      await tx.wait()
+
+      await loadUserDeposits(await signer.getAddress())
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadUserDeposits])
+
   const createPlan = useCallback(async (tenorDays: number, aprBps: number, minDeposit: string, maxDeposit: string, penaltyBps: number) => {
     if (!signer) return
     setLoading(true)
@@ -298,15 +329,108 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     }
   }, [signer, getContracts, loadPlans])
 
+  const mintUSDC = useCallback(async (toAddress: string, amount: string) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const amountWei = parseUnits(amount, 6)
+      const tx = await contracts.mockUSDC.mint(toAddress, amountWei)
+      await tx.wait()
+
+      if (signer) {
+        const address = await signer.getAddress()
+        await loadUsdcBalance(address)
+      }
+    } catch (err: any) {
+      setError(err.message || 'Mint failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts, loadUsdcBalance])
+
+  const increaseTime = useCallback(async (seconds: number) => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      // Call Hardhat JSON-RPC directly to bypass MetaMask
+      // Step 1: Get current block timestamp
+      const blockResponse = await fetch('http://localhost:8545', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_getBlockByNumber',
+          params: ['latest', false],
+          id: Date.now()
+        })
+      })
+      
+      const blockResult = await blockResponse.json()
+      if (blockResult.error) throw new Error(blockResult.error.message)
+      
+      const currentTs = parseInt(blockResult.result.timestamp, 16)
+      const newTs = currentTs + seconds
+      
+      // Step 2: Set next block timestamp
+      const setTsResponse = await fetch('http://localhost:8545', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+           jsonrpc: '2.0',
+           method: 'evm_setNextBlockTimestamp',
+          params: [newTs],
+          id: Date.now() + 1
+        })
+      })
+      
+      const setTsResult = await setTsResponse.json()
+      if (setTsResult.error) throw new Error(setTsResult.error.message)
+      
+      // Step 3: Mine a new block
+      const mineResponse = await fetch('http://localhost:8545', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+           jsonrpc: '2.0',
+           method: 'evm_mine',
+          params: [],
+          id: Date.now() + 2
+        })
+      })
+      
+      const mineResult = await mineResponse.json()
+      if (mineResult.error) throw new Error(mineResult.error.message)
+      
+       // Refresh data after time travel
+       const address = await signer.getAddress()
+       await fetchBlockTimestamp()
+       await loadPlans()
+       await loadUsdcBalance(address)
+       await loadUserDeposits(address)
+    } catch (err: any) {
+      setError(err.message || 'Time travel failed')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, loadPlans, loadUsdcBalance, loadUserDeposits])
+
   useEffect(() => {
     if (signer) {
       loadPlans()
+      fetchBlockTimestamp()
       signer.getAddress().then(async (address: string) => {
         await loadUsdcBalance(address)
         await loadUserDeposits(address)
       })
     }
-  }, [signer, loadPlans, loadUsdcBalance, loadUserDeposits])
+  }, [signer, loadPlans, loadUsdcBalance, loadUserDeposits, fetchBlockTimestamp])
 
   return {
     plans,
@@ -316,14 +440,18 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     isOwner,
     loading,
     error,
+    blockTimestamp,
     openDeposit,
     withdraw,
     earlyWithdraw,
     renewDeposit,
+    autoRenewDeposit,
     createPlan,
     updatePlan,
     enablePlan,
     disablePlan,
+    mintUSDC,
+    increaseTime,
     refreshData: () => {
       if (signer) {
         signer.getAddress().then(async (address: string) => {

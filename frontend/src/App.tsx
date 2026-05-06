@@ -48,18 +48,60 @@ function App() {
       {wallet.isConnected && (
         <main className="main">
           {!contracts.owner ? (
-            <div className="loading">Loading admin status... (Owner: {contracts.owner}, You: {wallet.address})</div>
+            <div className="loading">Loading admin status...</div>
           ) : (
             <>
-              <div className="debug-info" style={{background: '#f0f0f0', padding: '10px', margin: '10px 0', fontSize: '12px', fontFamily: 'monospace'}}>
-                <div>Owner from contract: <strong>{contracts.owner}</strong></div>
-                <div>Your wallet address: <strong>{wallet.address}</strong></div>
-                <div>Owner lowercase: {contracts.owner?.toLowerCase()}</div>
-                <div>You lowercase: {wallet.address?.toLowerCase()}</div>
-                <div>Match: <strong>{contracts.owner?.toLowerCase() === wallet.address?.toLowerCase() ? '✅ YES - ADMIN' : '❌ NO - USER'}</strong></div>
+              <div className="status-bar" style={{
+                background: '#1a1a2e',
+                border: '1px solid #2d2d44',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                margin: '10px 0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '20px',
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                color: '#e0e0e0',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                  <span style={{color: '#888'}}>Owner:</span>
+                  <span style={{color: '#fff'}}>{contracts.owner ? `${contracts.owner.slice(0,6)}...${contracts.owner.slice(-4)}` : '...'}</span>
+                </div>
+                <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                  <span style={{color: '#888'}}>You:</span>
+                  <span style={{color: '#fff'}}>{wallet.address ? `${wallet.address.slice(0,6)}...${wallet.address.slice(-4)}` : '...'}</span>
+                </div>
+                {contracts.owner?.toLowerCase() === wallet.address?.toLowerCase() ? (
+                  <span style={{
+                    background: '#065f46',
+                    color: '#10b981',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '1px solid #10b981'
+                  }}>
+                    ✅ Admin Mode
+                  </span>
+                ) : (
+                  <span style={{
+                    background: '#78350f',
+                    color: '#fbbf24',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '1px solid #fbbf24'
+                  }}>
+                    👤 User Mode
+                  </span>
+                )}
               </div>
               {contracts.owner?.toLowerCase() === wallet.address?.toLowerCase() ? (
-                <>
+                  <>
                   <div className="admin-badge">Admin Mode: {contracts.owner.slice(0, 6)}...{contracts.owner.slice(-4)}</div>
                   <AdminPanel
                     owner={contracts.owner}
@@ -67,6 +109,8 @@ function App() {
                     onUpdatePlan={contracts.updatePlan}
                     onEnablePlan={contracts.enablePlan}
                     onDisablePlan={contracts.disablePlan}
+                    onMintUSDC={contracts.mintUSDC}
+                    onIncreaseTime={contracts.increaseTime}
                     loading={contracts.loading}
                     error={contracts.error}
                   />
@@ -121,14 +165,16 @@ function App() {
                       <section className="section">
                         <h2>My Deposits</h2>
                         <MyDeposits
-                          deposits={contracts.userDeposits}
-                          plans={plansMap}
-                          onWithdraw={contracts.withdraw}
-                          onEarlyWithdraw={contracts.earlyWithdraw}
-                          onRenew={contracts.renewDeposit}
-                          loading={contracts.loading}
-                          error={contracts.error}
-                        />
+                           deposits={contracts.userDeposits}
+                           plans={plansMap}
+                           onWithdraw={contracts.withdraw}
+                           onEarlyWithdraw={contracts.earlyWithdraw}
+                           onRenew={contracts.renewDeposit}
+                           onAutoRenew={contracts.autoRenewDeposit}
+                           loading={contracts.loading}
+                           error={contracts.error}
+                           blockTimestamp={contracts.blockTimestamp}
+                         />
                       </section>
                     </div>
                   )}

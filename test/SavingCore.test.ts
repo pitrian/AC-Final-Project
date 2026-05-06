@@ -293,12 +293,12 @@ describe("SavingCore", function () {
     it("Should emit DepositOpened event", async function () {
       const tx = await openDeposit(user1, planId, DEPOSIT_AMOUNT);
       const receipt = await tx.wait();
-      const event = receipt.logs.find((l: any) => l.fragment && l.fragment.name === "DepositOpened");
+      const event = receipt?.logs?.find((l: any) => l.fragment && l.fragment.name === "DepositOpened");
       expect(event).to.not.be.undefined;
-      expect(event.args[0]).to.equal(1n);
-      expect(event.args[1]).to.equal(user1.address);
-      expect(event.args[2]).to.equal(1n);
-      expect(event.args[3]).to.equal(DEPOSIT_AMOUNT);
+      expect(event?.args?.[0]).to.equal(1n);
+      expect(event?.args?.[1]).to.equal(user1.address);
+      expect(event?.args?.[2]).to.equal(1n);
+      expect(event?.args?.[3]).to.equal(DEPOSIT_AMOUNT);
     });
 
     it("Should allow multiple deposits from same user", async function () {
