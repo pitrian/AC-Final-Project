@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navigation from './components/Navigation'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
@@ -17,6 +17,15 @@ function App() {
   
   const [currentPage, setCurrentPage] = useState('home')
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
+  const [isSystemPaused, setIsSystemPaused] = useState(false)
+
+  useEffect(() => {
+    if (wallet.isConnected && wallet.chainId) {
+      contracts.getSystemStatus().then(status => {
+        setIsSystemPaused(status.isPaused)
+      }).catch(console.error)
+    }
+  }, [wallet.isConnected, wallet.chainId, contracts.getSystemStatus])
 
   const isOwner = wallet.address && contracts.owner && 
     wallet.address.toLowerCase() === contracts.owner.toLowerCase()
@@ -65,6 +74,10 @@ function App() {
               onDisablePlan={contracts.disablePlan}
               onMintUSDC={contracts.mintUSDC}
               onIncreaseTime={contracts.increaseTime}
+              onPauseSystem={contracts.pauseSystem}
+              onUnpauseSystem={contracts.unpauseSystem}
+              onGetSystemStatus={contracts.getSystemStatus}
+              onGetTransactionHistory={contracts.getTransactionHistory}
               loading={contracts.loading}
               error={contracts.error}
             />
@@ -82,6 +95,7 @@ function App() {
             onWithdraw={contracts.withdraw}
             onEarlyWithdraw={contracts.earlyWithdraw}
             onRenewDeposit={contracts.renewDeposit}
+            isSystemPaused={isSystemPaused}
             loading={contracts.loading}
             error={contracts.error}
           />

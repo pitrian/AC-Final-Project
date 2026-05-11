@@ -362,6 +362,109 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     }
   }, [signer, getContracts, loadUsdcBalance])
 
+  const pauseSystem = useCallback(async () => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const isPaused = await contracts.savingCore.paused()
+      if (isPaused) {
+        setError('System is already paused')
+        setLoading(false)
+        return
+      }
+
+      const tx = await contracts.savingCore.pause()
+      await tx.wait()
+    } catch (err: any) {
+      const errorMsg = err.message || 'Pause failed'
+      setError(errorMsg)
+      throw new Error(errorMsg)
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts])
+
+  const unpauseSystem = useCallback(async () => {
+    if (!signer) return
+    setLoading(true)
+    setError(null)
+    try {
+      const contracts = getContracts()
+      if (!contracts) return
+
+      const isPaused = await contracts.savingCore.paused()
+      if (!isPaused) {
+        setError('System is already active')
+        setLoading(false)
+        return
+      }
+
+      const tx = await contracts.savingCore.unpause()
+      await tx.wait()
+    } catch (err: any) {
+      const errorMsg = err.message || 'Unpause failed'
+      setError(errorMsg)
+      throw new Error(errorMsg)
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, getContracts])
+
+  const getSystemStatus = useCallback(async () => {
+    if (!signer) return { isPaused: false, vaultBalance: '0', totalDeposits: 0 }
+    try {
+      const contracts = getContracts()
+      if (!contracts) return { isPaused: false, vaultBalance: '0', totalDeposits: 0 }
+
+      const isPaused = await contracts.savingCore.paused()
+      const vaultBalance = await contracts.vaultManager.getVaultBalance()
+      const depositCount = await contracts.savingCore.depositCount()
+
+      return {
+        isPaused,
+        vaultBalance: formatUnits(vaultBalance, 6),
+        totalDeposits: Number(depositCount)
+      }
+    } catch (err) {
+      console.error('Failed to get system status:', err)
+      return { isPaused: false, vaultBalance: '0', totalDeposits: 0 }
+    }
+  }, [signer, getContracts])
+
+  const getTransactionHistory = useCallback(async () => {
+    if (!signer || !provider || !chainId) return []
+    try {
+      const contracts = getContracts()
+      if (!contracts) return []
+
+      const depositCount = await contracts.savingCore.depositCount()
+      const transactions: any[] = []
+
+      for (let i = 1; i <= Number(depositCount); i++) {
+        const deposit = await contracts.savingCore.getDeposit(i)
+        transactions.push({
+          depositId: i,
+          owner: deposit.owner,
+          planId: Number(deposit.planId),
+          principal: formatUnits(deposit.principal, 6),
+          maturityAt: Number(deposit.maturityAt),
+          aprBps: Number(deposit.aprBpsAtOpen),
+          status: Number(deposit.status),
+          statusText: ['Active', 'Withdrawn', 'ManualRenewed', 'AutoRenewed'][Number(deposit.status)]
+        })
+      }
+
+      return transactions.reverse()
+    } catch (err) {
+      console.error('Failed to get transaction history:', err)
+      return []
+    }
+  }, [signer, provider, chainId, getContracts])
+
   const increaseTime = useCallback(async (seconds: number) => {
     if (!signer || !provider) return
     // Only allow time travel on localhost (chainId 31337)
@@ -465,6 +568,10 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     enablePlan,
     disablePlan,
     mintUSDC,
+    pauseSystem,
+    unpauseSystem,
+    getSystemStatus,
+    getTransactionHistory,
     increaseTime,
     refreshData: () => {
       if (signer) {

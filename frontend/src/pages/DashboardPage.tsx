@@ -14,6 +14,7 @@ interface DashboardPageProps {
   onWithdraw: (depositId: number) => Promise<void>
   onEarlyWithdraw: (depositId: number) => Promise<void>
   onRenewDeposit: (depositId: number, newPlanId: number) => Promise<void>
+  isSystemPaused: boolean
   loading: boolean
   error: string | null
 }
@@ -29,6 +30,7 @@ export default function DashboardPage({
   onWithdraw,
   onEarlyWithdraw,
   onRenewDeposit,
+  isSystemPaused,
   loading,
   error
 }: DashboardPageProps) {
@@ -66,6 +68,14 @@ export default function DashboardPage({
 
   return (
     <div className="dashboard-page">
+      {/* System Paused Warning */}
+      {isSystemPaused && (
+        <div className="system-paused-alert">
+          <h3>⏸️ System is Currently Paused</h3>
+          <p>All deposit, withdraw, and renew operations are temporarily disabled.</p>
+        </div>
+      )}
+
       {/* Metrics */}
       <div className="dashboard">
         <h2 className="dashboard-title">My Portfolio</h2>
@@ -105,8 +115,9 @@ export default function DashboardPage({
             My Deposits
           </button>
           <button 
-            className={`tab ${activeTab === 'products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('products')}
+            className={`tab ${activeTab === 'products' ? 'active' : ''} ${isSystemPaused ? 'disabled' : ''}`}
+            onClick={() => !isSystemPaused && setActiveTab('products')}
+            style={isSystemPaused ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Open New Deposit
           </button>
@@ -120,7 +131,7 @@ export default function DashboardPage({
                 <div className="empty-state-icon">📭</div>
                 <h3>No Deposits Yet</h3>
                 <p>Start by opening a new deposit in the Products tab</p>
-                <button className="btn btn-primary" onClick={() => setActiveTab('products')}>
+                <button className="btn btn-primary" onClick={() => !isSystemPaused && setActiveTab('products')} disabled={isSystemPaused}>
                   Open Deposit
                 </button>
               </div>
@@ -191,7 +202,7 @@ export default function DashboardPage({
                           <button 
                             className="btn btn-danger"
                             onClick={() => onEarlyWithdraw(deposit.depositId)}
-                            disabled={loading}
+                            disabled={loading || isSystemPaused}
                           >
                             Early Withdraw
                           </button>
@@ -199,12 +210,12 @@ export default function DashboardPage({
                           <button 
                             className="btn btn-primary"
                             onClick={() => onWithdraw(deposit.depositId)}
-                            disabled={loading}
+                            disabled={loading || isSystemPaused}
                           >
                             Withdraw
                           </button>
                         )}
-                        {isMatured && (
+                        {isMatured && !isSystemPaused && (
                           <select 
                             className="btn btn-secondary"
                             style={{ minWidth: 150 }}
@@ -219,7 +230,7 @@ export default function DashboardPage({
                             ))}
                           </select>
                         )}
-                        {isMatured && renewPlanId[deposit.depositId] && (
+                        {isMatured && !isSystemPaused && renewPlanId[deposit.depositId] && (
                           <button 
                             className="btn btn-primary"
                             onClick={() => onRenewDeposit(deposit.depositId, renewPlanId[deposit.depositId])}
@@ -309,10 +320,12 @@ export default function DashboardPage({
                     placeholder="Enter amount in USDC"
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
+                    disabled={isSystemPaused}
                   />
                   <button 
                     className="max-btn"
                     onClick={() => setDepositAmount(usdcBalance)}
+                    disabled={isSystemPaused}
                   >
                     MAX
                   </button>
@@ -320,9 +333,9 @@ export default function DashboardPage({
                 <button 
                   className="btn btn-primary"
                   onClick={handleDeposit}
-                  disabled={loading || !depositAmount}
+                  disabled={loading || !depositAmount || isSystemPaused}
                 >
-                  {loading ? 'Processing...' : 'Confirm Deposit'}
+                  {loading ? 'Processing...' : isSystemPaused ? 'System Paused' : 'Confirm Deposit'}
                 </button>
               </div>
             )}
