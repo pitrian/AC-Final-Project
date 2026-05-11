@@ -2,10 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Contract, formatUnits, parseUnits, JsonRpcSigner, BrowserProvider } from 'ethers'
 import { SavingCoreABI, MockUSDCABI, VaultManagerABI } from '../contracts/abis'
 import type { SavingPlan, DepositInfo } from '../types'
-
-const SAVING_CORE_ADDRESS = import.meta.env.VITE_SAVING_CORE_ADDRESS || ''
-const MOCK_USDC_ADDRESS = import.meta.env.VITE_MOCK_USDC_ADDRESS || ''
-const VAULT_MANAGER_ADDRESS = import.meta.env.VITE_VAULT_MANAGER_ADDRESS || ''
+import { getNetworkConfig } from '../config/networks'
 
 export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProvider | null, chainId: number | null) {
   const [plans, setPlans] = useState<SavingPlan[]>([])
@@ -15,6 +12,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [blockTimestamp, setBlockTimestamp] = useState<number>(Math.floor(Date.now() / 1000))
+  const [networkError, setNetworkError] = useState<string | null>(null)
 
   const fetchBlockTimestamp = useCallback(async () => {
     if (!provider) return
@@ -27,13 +25,21 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   }, [provider])
 
   const getContracts = useCallback(() => {
-    if (!signer) return null
-    return {
-      savingCore: new Contract(SAVING_CORE_ADDRESS, SavingCoreABI, signer),
-      mockUSDC: new Contract(MOCK_USDC_ADDRESS, MockUSDCABI, signer),
-      vaultManager: new Contract(VAULT_MANAGER_ADDRESS, VaultManagerABI, signer),
+    if (!signer || !chainId) return null
+    
+    const networkConfig = getNetworkConfig(chainId)
+    if (!networkConfig) {
+      setNetworkError(`Unsupported network: chainId ${chainId}. Only Localhost (31337) and Sepolia (11155111) are supported.`)
+      return null
     }
-  }, [signer])
+    
+    setNetworkError(null)
+    return {
+      savingCore: new Contract(networkConfig.savingCore, SavingCoreABI, signer),
+      mockUSDC: new Contract(networkConfig.mockUSDC, MockUSDCABI, signer),
+      vaultManager: new Contract(networkConfig.vaultManager, VaultManagerABI, signer),
+    }
+  }, [signer, chainId])
 
   useEffect(() => {
     if (signer) {
@@ -149,7 +155,10 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
         throw new Error('Insufficient USDC balance')
       }
 
-      const approveTx = await contracts.mockUSDC.approve(SAVING_CORE_ADDRESS, amountWei)
+      const networkConfig = getNetworkConfig(chainId!)
+      if (!networkConfig) throw new Error('Unsupported network')
+      
+      const approveTx = await contracts.mockUSDC.approve(networkConfig.savingCore, amountWei)
       await approveTx.wait()
 
       const depositTx = await contracts.savingCore.openDeposit(planId, amountWei)
@@ -364,7 +373,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     try {
       // Call Hardhat JSON-RPC directly to bypass MetaMask
       // Step 1: Get current block timestamp
-      const blockResponse = await fetch('http://localhost:8545', {
+      const blockResponse = await fetch('/rpc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -382,7 +391,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
       const newTs = currentTs + seconds
       
       // Step 2: Set next block timestamp
-      const setTsResponse = await fetch('http://localhost:8545', {
+      const setTsResponse = await fetch('/rpc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -397,7 +406,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
       if (setTsResult.error) throw new Error(setTsResult.error.message)
       
       // Step 3: Mine a new block
-      const mineResponse = await fetch('http://localhost:8545', {
+      const mineResponse = await fetch('/rpc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -444,6 +453,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     isOwner,
     loading,
     error,
+    networkError,
     blockTimestamp,
     openDeposit,
     withdraw,

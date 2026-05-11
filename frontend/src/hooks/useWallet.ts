@@ -9,12 +9,12 @@ declare global {
 }
 
 const SEPOLIA_RPC = 'https://eth-sepolia.g.alchemy.com/v2/o7K3LHjW01rjqTPDH5USU'
-const SEPOLIA_CHAIN_ID = 11155111 // 0xaa36a7
-const LOCALHOST_CHAIN_ID = 31337
+const SEPOLIA_CHAIN_ID = 11155111
 
 export function useWallet(): WalletState & {
   connect: () => Promise<void>
   disconnect: () => void
+  switchNetwork: (chainId: number) => Promise<boolean>
 } {
   const [wallet, setWallet] = useState<WalletState>({
     address: null,
@@ -27,23 +27,21 @@ export function useWallet(): WalletState & {
     chainId: null,
   })
 
-  const switchToNetwork = useCallback(async (targetChainId: number) => {
+  const switchNetwork = useCallback(async (targetChainId: number): Promise<boolean> => {
     if (!window.ethereum) return false
     
     const targetHex = '0x' + targetChainId.toString(16)
     
     try {
-      // Try to switch to target network
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: targetHex }],
       })
       return true
     } catch (switchError: any) {
-      // If network not added yet, add it
       if (switchError.code === 4902) {
         try {
-          const isSepolia = targetChainId === 11155111
+          const isSepolia = targetChainId === SEPOLIA_CHAIN_ID
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -79,68 +77,36 @@ export function useWallet(): WalletState & {
     setWallet(prev => ({ ...prev, isConnecting: true }))
 
     try {
-      // First, detect current network
       const tempProvider = new BrowserProvider(window.ethereum)
       const network = await tempProvider.getNetwork()
       const currentChainId = Number(network.chainId)
       
       console.log('[useWallet] Current network:', { chainId: currentChainId, name: network.name })
-      
-      // If on Localhost, stay there; otherwise switch to Sepolia
-      if (currentChainId !== LOCALHOST_CHAIN_ID) {
-        console.log('[useWallet] Not on Localhost, switching to Sepolia...')
-        const switched = await switchToNetwork(SEPOLIA_CHAIN_ID)
-        if (!switched) {
-          throw new Error('Failed to switch to Sepolia network')
-        }
-        // After switching, create new provider
-        const newProvider = new BrowserProvider(window.ethereum)
-        const accounts = await newProvider.send('eth_requestAccounts', [])
-        const signer = await newProvider.getSigner()
-        const address = accounts[0]
-        const ethBalance = await newProvider.getBalance(address)
-        const newNetwork = await newProvider.getNetwork()
 
-        const balance = parseFloat(formatEther(ethBalance)).toFixed(4)
-        console.log('[useWallet] Connected to Sepolia:', { address, balance, chainId: Number(newNetwork.chainId) })
+      // Just connect to whatever network MetaMask is currently on
+      const accounts = await tempProvider.send('eth_requestAccounts', [])
+      const signer = await tempProvider.getSigner()
+      const address = accounts[0]
+      const ethBalance = await tempProvider.getBalance(address)
 
-        setWallet({
-          address,
-          signer,
-          provider: newProvider,
-          balance,
-          usdcBalance: '0',
-          isConnected: true,
-          isConnecting: false,
-          chainId: Number(newNetwork.chainId),
-        })
-      } else {
-        // Already on Localhost, just connect
-        console.log('[useWallet] Already on Localhost, connecting...')
-        const accounts = await tempProvider.send('eth_requestAccounts', [])
-        const signer = await tempProvider.getSigner()
-        const address = accounts[0]
-        const ethBalance = await tempProvider.getBalance(address)
+      const balance = parseFloat(formatEther(ethBalance)).toFixed(4)
+      console.log('[useWallet] Connected to chain:', { address, balance, chainId: currentChainId })
 
-        const balance = parseFloat(formatEther(ethBalance)).toFixed(4)
-        console.log('[useWallet] Connected to Localhost:', { address, balance, chainId: currentChainId })
-
-        setWallet({
-          address,
-          signer,
-          provider: tempProvider,
-          balance,
-          usdcBalance: '0',
-          isConnected: true,
-          isConnecting: false,
-          chainId: currentChainId,
-        })
-      }
+      setWallet({
+        address,
+        signer,
+        provider: tempProvider,
+        balance,
+        usdcBalance: '0',
+        isConnected: true,
+        isConnecting: false,
+        chainId: currentChainId,
+      })
     } catch (err) {
       console.error('[useWallet] Failed to connect wallet:', err)
       setWallet(prev => ({ ...prev, isConnecting: false }))
     }
-  }, [switchToNetwork])
+  }, [])
 
   const disconnect = useCallback(() => {
     console.log('[useWallet] Disconnecting...')
@@ -170,5 +136,5 @@ export function useWallet(): WalletState & {
     }
   }, [wallet.isConnected, disconnect])
 
-  return { ...wallet, connect, disconnect }
+  return { ...wallet, connect, disconnect, switchNetwork }
 }
