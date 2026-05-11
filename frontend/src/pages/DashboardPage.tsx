@@ -35,6 +35,7 @@ export default function DashboardPage({
   error
 }: DashboardPageProps) {
   const [depositAmount, setDepositAmount] = useState('')
+  const [depositError, setDepositError] = useState('')
   const [activeTab, setActiveTab] = useState<'deposits' | 'products'>('deposits')
   const [renewPlanId, setRenewPlanId] = useState<Record<number, number>>({})
 
@@ -62,6 +63,25 @@ export default function DashboardPage({
 
   const handleDeposit = async () => {
     if (!selectedPlanId || !depositAmount) return
+    
+    const amount = parseFloat(depositAmount)
+    const plan = plans.find(p => Number(p.planId) === selectedPlanId)
+    
+    if (!plan) return
+    
+    const minDeposit = Number(plan.minDeposit) / 1e6
+    const maxDeposit = Number(plan.maxDeposit) / 1e6
+    
+    if (amount < minDeposit) {
+      setDepositError(`Amount must be at least ${minDeposit} USDC`)
+      return
+    }
+    if (amount > maxDeposit) {
+      setDepositError(`Amount cannot exceed ${maxDeposit} USDC`)
+      return
+    }
+    
+    setDepositError('')
     await onOpenDeposit(selectedPlanId, depositAmount)
     setDepositAmount('')
   }
@@ -315,13 +335,16 @@ export default function DashboardPage({
                   })()}
                 </div>
                 <div className="form-group">
-                  <input
-                    type="number"
-                    placeholder="Enter amount in USDC"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    disabled={isSystemPaused}
-                  />
+<input
+                      type="number"
+                      placeholder="Enter amount in USDC"
+                      value={depositAmount}
+                      onChange={(e) => {
+                        setDepositAmount(e.target.value)
+                        setDepositError('')
+                      }}
+                      disabled={isSystemPaused}
+                    />
                   <button 
                     className="max-btn"
                     onClick={() => setDepositAmount(usdcBalance)}
@@ -330,10 +353,15 @@ export default function DashboardPage({
                     MAX
                   </button>
                 </div>
+                {depositError && (
+                  <div className="form-error" style={{ color: '#dc3545', marginBottom: 12, fontSize: 14 }}>
+                    ⚠️ {depositError}
+                  </div>
+                )}
                 <button 
                   className="btn btn-primary"
                   onClick={handleDeposit}
-                  disabled={loading || !depositAmount || isSystemPaused}
+                  disabled={loading || !depositAmount || isSystemPaused || !!depositError}
                 >
                   {loading ? 'Processing...' : isSystemPaused ? 'System Paused' : 'Confirm Deposit'}
                 </button>
