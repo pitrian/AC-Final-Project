@@ -17,9 +17,9 @@ export const NETWORKS: Record<number, NetworkConfig> = {
   11155111: {
     chainId: 11155111,
     name: 'Sepolia Testnet',
-    savingCore: '0x37C37d9F0d4feD8c5e8A64abE0CE3Af3aA958498',
-    mockUSDC: '0x22C031d5AcEBf03Ac1Fb13fB7648d5D4790b6bcC',
-    vaultManager: '0x9505436218561d22036603f7F03526509f542C38',
+    savingCore: '0xed183dB08DAA20907fB2D55dfeA0f719eDf0f020',
+    mockUSDC: '0x9fD27aA483f528e9DA228E6C0D97Fcaa1035bBAb',
+    vaultManager: '0xFA9B1e5Cb087C1f23015dF3913A3881D07E0FC30',
   },
 }
 

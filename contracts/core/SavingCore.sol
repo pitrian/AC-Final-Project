@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/IVaultManager.sol";
+import "../utils/Base64.sol";
 
 /// @title SavingCore
 /// @author NFT-Powered Term Deposit Protocol
@@ -213,12 +214,173 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
         return "";
     }
 
-    /// @notice Returns the URI for a given token ID
+    /// @notice Generate SVG image for the NFT
+    /// @param tokenId The ID of the token
+    /// @return SVG as base64 encoded string
+    function _generateSVG(uint256 tokenId) internal view returns (string memory) {
+        DepositInfo memory deposit = deposits[tokenId];
+        SavingPlan memory plan = plans[deposit.planId];
+        
+        // Format principal with 6 decimals (USDC)
+        string memory principalStr = Strings.toString(deposit.principal / 1e6);
+        string memory principalDecimals = Strings.toString(deposit.principal % 1e6);
+        
+        // Format APR
+        string memory aprStr = Strings.toString(deposit.aprBpsAtOpen / 100);
+        
+        // Format tenor
+        string memory tenorStr = Strings.toString(plan.tenorDays);
+        
+        // Format maturity date
+        uint256 maturityYear = (deposit.maturityAt / 31536000) + 1970;
+        uint256 remainder = deposit.maturityAt % 31536000;
+        uint256 maturityMonth = (remainder / 2592000) + 1;
+        uint256 maturityDay = ((remainder % 2592000) / 86400) + 1;
+        
+        string memory dateStr = string(abi.encodePacked(
+            Strings.toString(maturityDay),
+            "/",
+            Strings.toString(maturityMonth),
+            "/",
+            Strings.toString(maturityYear)
+        ));
+        
+        string memory statusStr = deposit.status == DepositStatus.Active ? "Active" : 
+                                deposit.status == DepositStatus.Withdrawn ? "Withdrawn" :
+                                deposit.status == DepositStatus.ManualRenewed ? "Renewed" : "Auto-Renewed";
+        
+        // SVG template
+        string memory svg = string(abi.encodePacked(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">',
+            '<defs>',
+            '<linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">',
+            '<stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />',
+            '<stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />',
+            '</linearGradient>',
+            '</defs>',
+            '<rect width="400" height="300" rx="20" fill="url(#grad)"/>',
+            '<rect x="20" y="20" width="360" height="260" rx="15" fill="rgba(255,255,255,0.1)"/>',
+            '<text x="40" y="60" font-family="Arial" font-size="24" fill="white" font-weight="bold">NFT BANK</text>',
+            '<text x="40" y="90" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.7)">Term Deposit Certificate</text>',
+            '<rect x="40" y="120" width="320" height="1" fill="rgba(255,255,255,0.2)"/>',
+            '<text x="40" y="150" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.8)">Principal</text>',
+            '<text x="40" y="175" font-family="Arial" font-size="28" fill="white" font-weight="bold">', principalStr, '.', principalDecimals, ' USDC</text>',
+            '<text x="40" y="205" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.8)">APR / Tenor</text>',
+            '<text x="40" y="230" font-family="Arial" font-size="22" fill="#10B981" font-weight="bold">', aprStr, '% / ', tenorStr, ' Days</text>',
+            '<text x="220" y="205" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.8)">Maturity</text>',
+            '<text x="220" y="230" font-family="Arial" font-size="22" fill="white" font-weight="bold">', dateStr, '</text>',
+            '<text x="40" y="265" font-family="Arial" font-size="12" fill="rgba(255,255,255,0.6)">#', Strings.toString(tokenId), ' | ', statusStr, '</text>',
+            '</svg>'
+        ));
+        
+        return svg;
+    }
+
+    /// @notice Generate full token URI with metadata for OpenSea/Rarible
+    /// @param tokenId The ID of the token
+    /// @return Base64 encoded JSON metadata
+    function _generateTokenURI(uint256 tokenId) internal view returns (string memory) {
+        DepositInfo memory deposit = deposits[tokenId];
+        SavingPlan memory plan = plans[deposit.planId];
+        
+        // Format principal
+        string memory principalStr = Strings.toString(deposit.principal / 1e6);
+        string memory principalDecimals = Strings.toString(deposit.principal % 1e6);
+        string memory principalFull = string(abi.encodePacked(principalStr, ".", principalDecimals));
+        
+        // Format APR
+        string memory aprStr = Strings.toString(deposit.aprBpsAtOpen / 100);
+        
+        // Format tenor
+        string memory tenorStr = Strings.toString(plan.tenorDays);
+        
+        // Format maturity date (Unix timestamp for date display_type)
+        string memory maturityUnix = Strings.toString(deposit.maturityAt);
+        
+        // Format maturity date for display
+        uint256 maturityYear = (deposit.maturityAt / 31536000) + 1970;
+        uint256 remainder = deposit.maturityAt % 31536000;
+        uint256 maturityMonth = (remainder / 2592000) + 1;
+        uint256 maturityDay = ((remainder % 2592000) / 86400) + 1;
+        string memory maturityDate = string(abi.encodePacked(
+            Strings.toString(maturityDay),
+            "-",
+            Strings.toString(maturityMonth),
+            "-",
+            Strings.toString(maturityYear)
+        ));
+        
+        // Status string
+        string memory statusStr = deposit.status == DepositStatus.Active ? "Active" : 
+                                deposit.status == DepositStatus.Withdrawn ? "Withdrawn" :
+                                deposit.status == DepositStatus.ManualRenewed ? "Manual Renewed" : "Auto Renewed";
+        
+        // Generate SVG and encode to base64
+        string memory svg = _generateSVG(tokenId);
+        string memory imageURI = string(abi.encodePacked(
+            "data:image/svg+xml;base64,",
+            Base64.encode(bytes(svg))
+        ));
+        
+        // Build JSON metadata
+        string memory json = string(abi.encodePacked(
+            '{"name": "NFT Bank Deposit #',
+            Strings.toString(tokenId),
+            '",',
+            '"description": "Term Deposit Certificate - ',
+            principalFull,
+            ' USDC at ',
+            aprStr,
+            '% APR for ',
+            tenorStr,
+            ' days.Issued by NFT-Powered Term Deposit Protocol.",',
+            '"image": "',
+            imageURI,
+            '",',
+            '"external_url": "http://localhost:5173/dashboard",',
+            '"attributes": [',
+            '{"trait_type":"Principal","value":"',
+            principalFull,
+            '","display_type":"number"},',
+            '{"trait_type":"APR","value":"',
+            aprStr,
+            '%","display_type":"string"},',
+            '{"trait_type":"Tenor","value":"',
+            tenorStr,
+            ' days","display_type":"string"},',
+            '{"trait_type":"Maturity Date","value":"',
+            maturityUnix,
+            '","display_type":"date"},',
+            '{"trait_type":"Maturity Date (Readable)","value":"',
+            maturityDate,
+            '","display_type":"string"},',
+            '{"trait_type":"Status","value":"',
+            statusStr,
+            '","display_type":"string"},',
+            '{"trait_type":"Plan ID","value":',
+            Strings.toString(deposit.planId),
+            ',"display_type":"number"},',
+            '{"trait_type":"Penalty","value":"',
+            Strings.toString(deposit.penaltyBpsAtOpen / 100),
+            '%","display_type":"string"}',
+            ']'
+            '}'
+        ));
+        
+        // Return as base64 encoded data URI
+        return string(abi.encodePacked(
+            "data:application/json;base64,",
+            Base64.encode(bytes(json))
+        ));
+    }
+
+    /// @notice Returns the URI for a given token ID with full metadata
     /// @dev Overrides ERC721.tokenURI() and ERC721URIStorage.tokenURI()
     /// @param tokenId ID of the token to query
-    /// @return The token URI string
+    /// @return The token URI string with metadata
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(tokenId);
+        require(deposits[tokenId].principal > 0, "Token does not exist");
+        return _generateTokenURI(tokenId);
     }
 
     /// @notice Checks if the contract supports an interface
