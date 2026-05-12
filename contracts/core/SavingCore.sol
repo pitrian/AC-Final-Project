@@ -518,7 +518,7 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
     function withdraw(uint256 depositId) external whenNotPaused {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
-        if (msg.sender != deposit.owner) revert NotDepositOwner();
+        if (msg.sender != ownerOf(depositId)) revert NotDepositOwner();
         if (deposit.status != DepositStatus.Active) revert AlreadyWithdrawn();
         if (block.timestamp < deposit.maturityAt) revert DepositNotMatured();
 
@@ -541,7 +541,7 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
     function earlyWithdraw(uint256 depositId) external whenNotPaused {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
-        if (msg.sender != deposit.owner) revert NotDepositOwner();
+        if (msg.sender != ownerOf(depositId)) revert NotDepositOwner();
         if (deposit.status != DepositStatus.Active) revert AlreadyWithdrawn();
         if (block.timestamp >= deposit.maturityAt) revert DepositNotMatured();
 
@@ -565,7 +565,7 @@ contract SavingCore is ERC721, ERC721URIStorage, Ownable, Pausable {
     function renewDeposit(uint256 depositId, uint256 newPlanId) external whenNotPaused returns (uint256) {
         DepositInfo memory deposit = deposits[depositId];
         if (deposit.owner == address(0)) revert PlanDoesNotExist();
-        if (msg.sender != deposit.owner) revert NotDepositOwner();
+        if (msg.sender != ownerOf(depositId)) revert NotDepositOwner();
         if (deposit.status != DepositStatus.Active) revert AlreadyRenewed();
         if (block.timestamp < deposit.maturityAt) revert DepositNotMatured();
         if (newPlanId == 0 || newPlanId > planCount) revert PlanDoesNotExist();

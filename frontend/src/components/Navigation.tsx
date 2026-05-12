@@ -65,7 +65,7 @@ export default function Navigation({
         <div className="nav-network">
           <span>🌐</span>
           <select 
-            value={currentChainId || ''}
+            value={currentChainId || 31337}
             onChange={(e) => onSwitchNetwork(parseInt(e.target.value))}
           >
             {Object.values(NETWORKS).map((network) => (

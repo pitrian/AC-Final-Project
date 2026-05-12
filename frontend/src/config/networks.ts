@@ -10,16 +10,16 @@ export const NETWORKS: Record<number, NetworkConfig> = {
   31337: {
     chainId: 31337,
     name: 'Localhost 8545',
-    savingCore: '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853',
-    mockUSDC: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
-    vaultManager: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
+    savingCore: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+    mockUSDC: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    vaultManager: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
   },
   11155111: {
     chainId: 11155111,
     name: 'Sepolia Testnet',
-    savingCore: '0xed183dB08DAA20907fB2D55dfeA0f719eDf0f020',
-    mockUSDC: '0x9fD27aA483f528e9DA228E6C0D97Fcaa1035bBAb',
-    vaultManager: '0xFA9B1e5Cb087C1f23015dF3913A3881D07E0FC30',
+    savingCore: '0x0ab1d1C38AAcCFf1BB03f163fC455EE9C65aE299',
+    mockUSDC: '0x53ccC157aFD00C5280aBB3b5fC3Abf0E733880cb',
+    vaultManager: '0x242635740627E43d43d7Dfa3310e238737415257',
   },
 }
 

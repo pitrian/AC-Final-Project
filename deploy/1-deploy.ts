@@ -53,6 +53,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await VaultManager.approveSpender(savingCore.address, ethers.MaxUint256);
 
   console.log("Deployment complete!");
+
+  // Output for networks.ts
+  console.log("\n====================");
+  console.log("COPY THESE TO networks.ts:");
+  console.log("====================");
+  console.log(`  ${hre.network.name}:`)
+  console.log(`    chainId: ${hre.network.name === 'localhost' ? 31337 : hre.network.name === 'sepolia' ? 11155111 : 0},`)
+  console.log(`    name: '${hre.network.name === 'localhost' ? 'Localhost 8545' : 'Sepolia Testnet'}',`)
+  console.log(`    savingCore: '${savingCore.address}',`)
+  console.log(`    mockUSDC: '${mockUSDC.address}',`)
+  console.log(`    vaultManager: '${vaultManager.address}',`)
+  console.log("====================\n");
 };
 
 func.tags = ["deploy"];

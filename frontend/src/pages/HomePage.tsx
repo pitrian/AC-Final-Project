@@ -22,9 +22,9 @@ export default function HomePage({ onNavigate, onConnect, isConnected }: HomePag
                 Go to Dashboard
               </a>
             ) : (
-              <a className="btn btn-primary" onClick={onConnect}>
+              <button className="btn btn-primary" onClick={() => { console.log('Connect clicked'); onConnect() }}>
                 Get Started
-              </a>
+              </button>
             )}
             <a className="btn btn-outline" onClick={() => onNavigate('products')}>
               View Products

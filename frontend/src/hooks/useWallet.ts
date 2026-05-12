@@ -27,6 +27,43 @@ export function useWallet(): WalletState & {
     chainId: null,
   })
 
+  useEffect(() => {
+    if (!window.ethereum) return
+
+    const checkExistingConnection = async () => {
+      if (window.ethereum.selectedAddress) {
+        try {
+          const tempProvider = new BrowserProvider(window.ethereum)
+          const network = await tempProvider.getNetwork()
+          const currentChainId = Number(network.chainId)
+          const accounts = await tempProvider.send('eth_accounts', [])
+          
+          if (accounts.length > 0) {
+            const signer = await tempProvider.getSigner()
+            const address = accounts[0]
+            const ethBalance = await tempProvider.getBalance(address)
+            const balance = parseFloat(formatEther(ethBalance)).toFixed(4)
+
+            setWallet({
+              address,
+              signer,
+              provider: tempProvider,
+              balance,
+              usdcBalance: '0',
+              isConnected: true,
+              isConnecting: false,
+              chainId: currentChainId,
+            })
+          }
+        } catch (err) {
+          console.error('[useWallet] Failed to restore connection:', err)
+        }
+      }
+    }
+
+    checkExistingConnection()
+  }, [])
+
   const switchNetwork = useCallback(async (targetChainId: number): Promise<boolean> => {
     if (!window.ethereum) return false
     
@@ -67,7 +104,14 @@ export function useWallet(): WalletState & {
     }
   }, [])
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    console.log('[useWallet] Connect function called')
+    
     if (!window.ethereum) {
       alert('Please install MetaMask!')
       return
@@ -77,6 +121,13 @@ export function useWallet(): WalletState & {
     setWallet(prev => ({ ...prev, isConnecting: true }))
 
     try {
+      if (window.ethereum.selectedAddress) {
+        await window.ethereum.request({
+          method: 'wallet_revokePermissions',
+          params: [{ eth_accounts: {} }],
+        })
+      }
+      
       const tempProvider = new BrowserProvider(window.ethereum)
       const network = await tempProvider.getNetwork()
       const currentChainId = Number(network.chainId)
@@ -123,16 +174,28 @@ export function useWallet(): WalletState & {
   }, [])
 
   useEffect(() => {
-    if (wallet.isConnected && window.ethereum) {
-      window.ethereum.on('accountsChanged', () => disconnect())
-      window.ethereum.on('chainChanged', () => disconnect())
+    if (!window.ethereum) return
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        disconnect()
+      } else if (wallet.isConnected) {
+        window.location.reload()
+      }
     }
 
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', disconnect)
-        window.ethereum.removeListener('chainChanged', disconnect)
+    const handleChainChanged = () => {
+      if (wallet.isConnected) {
+        window.location.reload()
       }
+    }
+
+    window.ethereum.on('accountsChanged', handleAccountsChanged)
+    window.ethereum.on('chainChanged', handleChainChanged)
+
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+      window.ethereum.removeListener('chainChanged', handleChainChanged)
     }
   }, [wallet.isConnected, disconnect])
 

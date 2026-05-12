@@ -1,8 +1,34 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Contract, formatUnits, parseUnits, JsonRpcSigner, BrowserProvider } from 'ethers'
+import { Contract, formatUnits, parseUnits, JsonRpcSigner, BrowserProvider, isError } from 'ethers'
 import { SavingCoreABI, MockUSDCABI, VaultManagerABI } from '../contracts/abis'
 import type { SavingPlan, DepositInfo } from '../types'
 import { getNetworkConfig } from '../config/networks'
+
+const ERROR_SELECTORS: Record<string, string> = {
+  '0xc74ecfa1': 'You are not the owner of this NFT',
+  '0x4ada7d1f': 'Deposit has already been withdrawn',
+  '0x8c5e52d1': 'Deposit has already been renewed',
+  '0x9fdcb33e': 'Deposit has not matured yet',
+  '0x5c66e7dc': 'Deposit amount below minimum',
+  '0xdfb0e54a': 'Deposit amount exceeds maximum',
+  '0x678a4164': 'Plan does not exist',
+  '0x28e4e18a': 'Plan is not enabled',
+  '0x094e7419': 'System is currently paused',
+}
+
+function parseContractError(err: any): string {
+  if (isError(err, 'CALL_EXCEPTION')) {
+    const data = err.data
+    if (data && ERROR_SELECTORS[data]) {
+      return ERROR_SELECTORS[data]
+    }
+    if (err.reason) {
+      return err.reason
+    }
+    return 'Transaction failed. Please try again.'
+  }
+  return err.message || 'An unexpected error occurred'
+}
 
 export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProvider | null, chainId: number | null) {
   const [plans, setPlans] = useState<SavingPlan[]>([])
@@ -42,13 +68,14 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
   }, [signer, chainId])
 
   useEffect(() => {
-    if (signer) {
+    if (signer && chainId) {
       const loadOwner = async () => {
         try {
           const contracts = getContracts()
           if (!contracts) return
           const ownerAddress = await contracts.savingCore.owner()
           setOwner(ownerAddress.toLowerCase())
+          console.log('[useContracts] Owner loaded:', ownerAddress)
         } catch (err) {
           console.error('Failed to load owner:', err)
         }
@@ -57,7 +84,7 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
     } else {
       setOwner(null)
     }
-  }, [signer, getContracts])
+  }, [signer, chainId, getContracts])
 
   const isOwner = useCallback(async (address: string) => {
     if (!signer) return false
@@ -166,8 +193,9 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
 
       await loadUsdcBalance(await signer.getAddress())
       await loadUserDeposits(await signer.getAddress())
-    } catch (err: any) {
-      setError(err.message || 'Transaction failed')
+} catch (err: any) {
+      const msg = parseContractError(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -188,7 +216,8 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
       await loadUsdcBalance(await signer.getAddress())
       await loadUserDeposits(await signer.getAddress())
     } catch (err: any) {
-      setError(err.message || 'Transaction failed')
+      const msg = parseContractError(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -209,7 +238,8 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
       await loadUsdcBalance(await signer.getAddress())
       await loadUserDeposits(await signer.getAddress())
     } catch (err: any) {
-      setError(err.message || 'Transaction failed')
+      const msg = parseContractError(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -229,7 +259,8 @@ export function useContracts(signer: JsonRpcSigner | null, provider: BrowserProv
 
       await loadUserDeposits(await signer.getAddress())
     } catch (err: any) {
-      setError(err.message || 'Transaction failed')
+      const msg = parseContractError(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
